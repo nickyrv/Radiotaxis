@@ -1,0 +1,153 @@
+<div class="flex h-screen bg-gray-50">
+
+  <!-- Sidebar -->
+  <aside 
+    [ngClass]="{'translate-x-0': sidebarOpen, '-translate-x-full lg:translate-x-0': !sidebarOpen}"
+    class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out"
+  >
+    <div class="flex flex-col h-full">
+      
+      <!-- Header -->
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h2 class="text-gray-900">Mi Portal</h2>
+          <button (click)="sidebarOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700">
+            <lucide-icon name="x" class="w-6 h-6"></lucide-icon>
+          </button>
+        </div>
+        <p class="text-gray-600 text-sm mt-1">{{ user.name }}</p>
+        <span class="inline-block mt-2 px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">Propietario</span>
+      </div>
+
+      <!-- KPIs sidebar -->
+      <div class="flex-1 p-4">
+        <div class="space-y-2">
+          <div class="p-4 bg-blue-50 rounded-lg">
+            <div class="flex items-center gap-2 text-blue-600 mb-1">
+              <lucide-icon name="car" class="w-5 h-5"></lucide-icon>
+              <span>Mis Vehículos</span>
+            </div>
+            <div class="text-gray-900">{{ ownerVehicles.length }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <div class="p-4 border-t border-gray-200">
+        <button (click)="logout()" class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+          <lucide-icon name="log-out" class="w-5 h-5"></lucide-icon>
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Overlay -->
+  <div *ngIf="sidebarOpen" (click)="sidebarOpen=false" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"></div>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-auto">
+    
+    <!-- Mobile menu button -->
+    <div class="lg:hidden bg-white border-b border-gray-200 p-4">
+      <button (click)="sidebarOpen = true" class="text-gray-700 hover:text-gray-900">
+        <lucide-icon name="menu" class="w-6 h-6"></lucide-icon>
+      </button>
+    </div>
+
+    <div class="p-6 lg:p-8 space-y-6">
+      
+      <!-- Header -->
+      <div>
+        <h1 class="text-gray-900">Dashboard de Transparencia</h1>
+        <p class="text-gray-600 mt-1">Monitoreo financiero de sus vehículos</p>
+      </div>
+
+      <!-- KPIs -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="bg-green-100 p-3 rounded-lg">
+              <lucide-icon name="dollar-sign" class="w-6 h-6 text-green-600"></lucide-icon>
+            </div>
+            <div>
+              <div class="text-gray-600 text-sm">Ingresos del Mes</div>
+              <div class="text-gray-900">Bs. {{ totalThisMonth | number }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="bg-red-100 p-3 rounded-lg">
+              <lucide-icon name="wrench" class="w-6 h-6 text-red-600"></lucide-icon>
+            </div>
+            <div>
+              <div class="text-gray-600 text-sm">Gastos Mantenimiento</div>
+              <div class="text-gray-900">Bs. {{ totalMaintenanceCosts | number }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="bg-purple-100 p-3 rounded-lg">
+              <lucide-icon name="trending-up" class="w-6 h-6 text-purple-600"></lucide-icon>
+            </div>
+            <div>
+              <div class="text-gray-600 text-sm">Utilidad Neta</div>
+              <div class="text-gray-900">Bs. {{ netProfit | number }}</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Vehicles -->
+      <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <h3 class="text-gray-900 mb-6">Estado de Vehículos</h3>
+        <div class="space-y-4">
+
+          <div *ngFor="let vehicle of ownerVehicles" class="border border-gray-200 rounded-lg p-4">
+
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <div class="bg-blue-100 p-3 rounded-lg">
+                  <lucide-icon name="car" class="w-6 h-6 text-blue-600"></lucide-icon>
+                </div>
+                <div>
+                  <div class="text-gray-900">{{ vehicle.plate }}</div>
+                  <div class="text-gray-600 text-sm">{{ vehicle.model }} ({{ vehicle.year }})</div>
+                </div>
+              </div>
+
+              <span 
+                [ngClass]="{
+                  'bg-green-100 text-green-700': vehicle.status === 'active',
+                  'bg-yellow-100 text-yellow-700': vehicle.status === 'maintenance',
+                  'bg-gray-100 text-gray-700': vehicle.status !== 'active' && vehicle.status !== 'maintenance'
+                }"
+                class="px-3 py-1 rounded-full text-sm"
+              >
+                {{ vehicle.status === 'active' ? 'Activo' : vehicle.status === 'maintenance' ? 'Mantenimiento' : 'Inactivo' }}
+              </span>
+
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <p class="text-gray-600">Último Mantenimiento</p>
+                <p class="text-gray-900">{{ vehicle.lastMaintenance | date:'shortDate' }}</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
