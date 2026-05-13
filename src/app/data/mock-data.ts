@@ -2,25 +2,30 @@
 
 export const mockAlerts = [
   {
-    id: 1,
+    id: '1',
+    title: 'SOAT próximo a vencer',
+    description: 'El SOAT del vehículo LP-1234 vence en 7 días.',
+    type: 'document',
     severity: 'high',
-    title: 'Vehículo retrasado',
-    description: 'El vehículo RT-102 tiene retraso.'
+    date: '2026-05-20'
   },
   {
-    id: 2,
+    id: '2',
+    title: 'Mantenimiento programado',
+    description: 'El vehículo LP-5678 requiere mantenimiento.',
+    type: 'maintenance',
     severity: 'medium',
-    title: 'Conductor inactivo',
-    description: 'El conductor Juan Pérez no inició turno.'
+    date: '2026-05-25'
   },
   {
-    id: 3,
+    id: '3',
+    title: 'Pago pendiente',
+    description: 'Existe un pago pendiente del conductor Juan Pérez.',
+    type: 'payment',
     severity: 'low',
-    title: 'Mantenimiento próximo',
-    description: 'Vehículo requiere mantenimiento.'
+    date: '2026-05-28'
   }
 ];
-
 export const mockProfitabilityData = [
   { month: 'Jul', historical: 10000, predicted: 10200 },
   { month: 'Ago', historical: 12000, predicted: 12300 },
@@ -130,5 +135,45 @@ export const mockShifts = [
     startTime: '16:00',
     endTime: '00:00',
     status: 'pending'
+  }
+];
+
+export const mockIncidents = [
+  {
+    id: '1',
+    driverId: '1',
+    type: 'failure',
+    description: 'Falla en frenos',
+    status: 'pending',
+    date: '2026-05-12'
+  },
+
+  {
+    id: '2',
+    driverId: '1',
+    type: 'accident',
+    description: 'Choque leve',
+    status: 'resolved',
+    date: '2026-05-09'
+  }
+];
+
+export const mockPayments = [
+  {
+    id: '1',
+    driverId: '1',
+    amount: 150,
+    concept: 'Entrega diaria',
+    date: '2026-05-13',
+    type: 'daily'
+  },
+
+  {
+    id: '2',
+    driverId: '1',
+    amount: 900,
+    concept: 'Entrega semanal',
+    date: '2026-05-10',
+    type: 'weekly'
   }
 ];

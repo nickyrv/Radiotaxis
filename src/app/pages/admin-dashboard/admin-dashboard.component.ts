@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+
 import { AdminOverviewComponent } from './components/admin-overview/admin-overview.component';
 import { VehiclesManagementComponent } from './components/vehicles-management/vehicles-management.component';
 import { DriversManagementComponent } from './components/drivers-management/drivers-management.component';
@@ -18,22 +19,25 @@ type AdminView =
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule,
-     AdminOverviewComponent, 
-     VehiclesManagementComponent,
-     DriversManagementComponent,
-     OwnersManagementComponent,
-     ShiftsManagementComponent,
-     AlertsManagementComponent
-    ],
+  imports: [
+    CommonModule,
+    AdminOverviewComponent,
+    VehiclesManagementComponent,
+    DriversManagementComponent,
+    OwnersManagementComponent,
+    ShiftsManagementComponent,
+    AlertsManagementComponent
+  ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
 })
-export class AdminDashboardComponent {
+export class AdminDashboardComponent implements OnInit {
 
   currentView: AdminView = 'overview';
 
   sidebarOpen = false;
+
+  windowWidth = window.innerWidth;
 
   user = {
     name: 'Administrador'
@@ -48,13 +52,28 @@ export class AdminDashboardComponent {
     { id: 'alerts', label: 'Alertas' }
   ];
 
+  ngOnInit() {
+
+    window.addEventListener('resize', () => {
+
+      this.windowWidth = window.innerWidth;
+
+    });
+
+  }
+
   setView(view: AdminView) {
+
     this.currentView = view;
+
     this.sidebarOpen = false;
+
   }
 
   logout() {
+
     console.log('Cerrar sesión');
+
   }
 
 }

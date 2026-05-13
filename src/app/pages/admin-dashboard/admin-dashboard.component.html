@@ -3,9 +3,8 @@
   <!-- Sidebar -->
   <aside
     class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out"
-    [class.translate-x-0]="sidebarOpen"
-    [class.-translate-x-full]="!sidebarOpen"
-  >
+    [class.translate-x-0]="sidebarOpen || windowWidth >= 1024"
+[class.-translate-x-full]="!sidebarOpen && windowWidth < 1024"  >
 
     <div class="flex flex-col h-full">
 
