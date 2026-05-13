@@ -1,67 +1,60 @@
-import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, 
-  LayoutDashboard, Car, Users, UserCircle, Calendar,
-  AlertTriangle, LogOut, Menu, X 
-} from 'lucide-angular';
+import { Component } from '@angular/core';
+import { AdminOverviewComponent } from './components/admin-overview/admin-overview.component';
+import { VehiclesManagementComponent } from './components/vehicles-management/vehicles-management.component';
+import { DriversManagementComponent } from './components/drivers-management/drivers-management.component';
+import { OwnersManagementComponent } from './components/owners-management/owners-management.component';
+import { ShiftsManagementComponent } from './components/shifts-management/shifts-management.component';
+import { AlertsManagementComponent } from './components/alerts-management/alerts-management.component';
 
-// IMPORTA TUS COMPONENTES
-import { AdminOverviewComponent } from '../admin/admin-overview/admin-overview.component';
-import { VehiclesManagementComponent } from '../admin/vehicles-management/vehicles-management.component';
-import { DriversManagementComponent } from '../admin/drivers-management/drivers-management.component';
-import { OwnersManagementComponent } from '../admin/owners-management/owners-management.component';
-import { ShiftsManagementComponent } from '../admin/shifts-management/shifts-management.component';
-import { AlertsManagementComponent } from '../admin/alerts-management/alerts-management.component';
+type AdminView =
+  | 'overview'
+  | 'vehicles'
+  | 'drivers'
+  | 'owners'
+  | 'shifts'
+  | 'alerts';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [
-    CommonModule,
-
-    // ICONOS DE LUCIDE
-    LucideAngularModule.pick({
-      LayoutDashboard,
-      Car,
-      Users,
-      UserCircle,
-      Calendar,
-      AlertTriangle,
-      LogOut,
-      Menu,
-      X
-    }),
-
-    // COMPONENTES DE LAS VISTAS
-    AdminOverviewComponent,
-    VehiclesManagementComponent,
-    DriversManagementComponent,
-    OwnersManagementComponent,
-    ShiftsManagementComponent,
-    AlertsManagementComponent
-  ],
-  templateUrl: './admin-dashboard.component.html'
+  imports: [CommonModule,
+     AdminOverviewComponent, 
+     VehiclesManagementComponent,
+     DriversManagementComponent,
+     OwnersManagementComponent,
+     ShiftsManagementComponent,
+     AlertsManagementComponent
+    ],
+  templateUrl: './admin-dashboard.component.html',
+  styleUrls: ['./admin-dashboard.component.css']
 })
 export class AdminDashboardComponent {
 
-  sidebarOpen = false;
-  currentView: string = 'overview';
+  currentView: AdminView = 'overview';
 
-  menuItems = [
-    { id: 'overview', label: 'Dashboard', icon: 'LayoutDashboard' },
-    { id: 'vehicles', label: 'Vehículos', icon: 'Car' },
-    { id: 'drivers', label: 'Conductores', icon: 'Users' },
-    { id: 'owners', label: 'Propietarios', icon: 'UserCircle' },
-    { id: 'shifts', label: 'Relevos', icon: 'Calendar' },
-    { id: 'alerts', label: 'Alertas', icon: 'AlertTriangle' }
+  sidebarOpen = false;
+
+  user = {
+    name: 'Administrador'
+  };
+
+  menuItems: { id: AdminView; label: string }[] = [
+    { id: 'overview', label: 'Dashboard' },
+    { id: 'vehicles', label: 'Vehículos' },
+    { id: 'drivers', label: 'Conductores' },
+    { id: 'owners', label: 'Propietarios' },
+    { id: 'shifts', label: 'Relevos' },
+    { id: 'alerts', label: 'Alertas' }
   ];
 
-  setView(view: string) {
+  setView(view: AdminView) {
     this.currentView = view;
     this.sidebarOpen = false;
   }
 
   logout() {
-    console.log("CERRAR SESIÓN");
+    console.log('Cerrar sesión');
   }
+
 }

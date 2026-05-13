@@ -1,0 +1,246 @@
+<div class="space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+
+    <div>
+      <h1 class="text-gray-900 text-2xl font-bold">
+        Gestión de Conductores
+      </h1>
+
+      <p class="text-gray-600 mt-1">
+        Administre los conductores de la flota
+      </p>
+    </div>
+
+    <button
+      (click)="showForm = true"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+
+      Nuevo Conductor
+    </button>
+
+  </div>
+
+  <!-- Search -->
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+
+    <input
+      type="text"
+      placeholder="Buscar conductor..."
+      [(ngModel)]="searchTerm"
+      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+
+    <div class="overflow-x-auto">
+
+      <table class="w-full">
+
+        <thead class="bg-gray-50 border-b border-gray-200">
+
+          <tr>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Nombre
+            </th>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Licencia
+            </th>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Teléfono
+            </th>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Vehículo
+            </th>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Estado
+            </th>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Vencimiento
+            </th>
+
+            <th class="px-6 py-3 text-left text-gray-700">
+              Acciones
+            </th>
+
+          </tr>
+
+        </thead>
+
+        <tbody class="divide-y divide-gray-200">
+
+          <tr
+            *ngFor="let driver of filteredDrivers"
+            class="hover:bg-gray-50">
+
+            <td class="px-6 py-4 text-gray-900">
+              {{ driver.name }}
+            </td>
+
+            <td class="px-6 py-4 text-gray-700">
+              {{ driver.license }}
+            </td>
+
+            <td class="px-6 py-4 text-gray-700">
+              {{ driver.phone }}
+            </td>
+
+            <td class="px-6 py-4 text-gray-700">
+              {{ getVehiclePlate(driver.vehicleId) }}
+            </td>
+
+            <td class="px-6 py-4">
+
+              <span
+                [class]="
+                  'px-2 py-1 rounded-full text-sm ' +
+                  getStatusColor(driver.status)
+                ">
+
+                {{ getStatusLabel(driver.status) }}
+
+              </span>
+
+            </td>
+
+            <td class="px-6 py-4 text-gray-700">
+              {{ driver.licenseExpiry }}
+            </td>
+
+            <td class="px-6 py-4">
+
+              <div class="flex gap-2">
+
+                <button
+                  (click)="handleToggleBlock(driver)"
+                  class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+
+                  {{
+                    driver.status === 'blocked'
+                      ? 'Desbloquear'
+                      : 'Bloquear'
+                  }}
+
+                </button>
+
+                <button
+                  (click)="handleEdit(driver)"
+                  class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+
+                  Editar
+
+                </button>
+
+                <button
+                  (click)="handleDelete(driver.id)"
+                  class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700">
+
+                  Eliminar
+
+                </button>
+
+              </div>
+
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+  <!-- Modal -->
+  <div
+    *ngIf="showForm"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+
+    <div class="bg-white rounded-lg max-w-2xl w-full p-6">
+
+      <h2 class="text-2xl font-bold mb-6">
+
+        {{
+          editingDriver
+            ? 'Editar Conductor'
+            : 'Nuevo Conductor'
+        }}
+
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <input
+          type="text"
+          placeholder="Nombre completo"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+
+        <input
+          type="text"
+          placeholder="Licencia"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+
+        <input
+          type="text"
+          placeholder="Teléfono"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+
+        <select
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+
+          <option value="">
+            Seleccionar vehículo
+          </option>
+
+          <option
+            *ngFor="let vehicle of mockVehicles"
+            [value]="vehicle.id">
+
+            {{ vehicle.plate }}
+
+          </option>
+
+        </select>
+
+      </div>
+
+      <div class="flex justify-end gap-3 mt-6">
+
+        <button
+          (click)="showForm = false"
+          class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+
+          Cancelar
+
+        </button>
+
+        <button
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+
+          Guardar
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

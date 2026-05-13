@@ -1,0 +1,81 @@
+<div class="space-y-6">
+
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Gestión de Propietarios
+      </h1>
+
+      <p class="text-gray-600">
+        Administración de propietarios
+      </p>
+    </div>
+
+    <button
+      (click)="showForm = true"
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg"
+    >
+      Nuevo Propietario
+    </button>
+  </div>
+
+  <!-- Buscador -->
+
+  <div class="bg-white p-4 rounded-lg border">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Buscar propietario..."
+      class="w-full border rounded-lg px-4 py-2"
+    />
+  </div>
+
+  <!-- Cards -->
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    <div
+      *ngFor="let owner of filteredOwners"
+      class="bg-white border rounded-lg p-6"
+    >
+
+      <h3 class="text-xl font-semibold text-gray-900">
+        {{ owner.name }}
+      </h3>
+
+      <p class="text-gray-600 mt-2">
+        {{ owner.email }}
+      </p>
+
+      <p class="text-gray-600">
+        {{ owner.phone }}
+      </p>
+
+      <p class="text-gray-700 mt-3">
+        Vehículos:
+        {{ getVehiclesInfo(owner.vehicleIds) }}
+      </p>
+
+      <div class="flex gap-2 mt-4">
+
+        <button
+          (click)="handleEdit(owner)"
+          class="flex-1 bg-yellow-500 text-white py-2 rounded-lg"
+        >
+          Editar
+        </button>
+
+        <button
+          (click)="handleDelete(owner.id)"
+          class="flex-1 bg-red-600 text-white py-2 rounded-lg"
+        >
+          Eliminar
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

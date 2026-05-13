@@ -41,7 +41,7 @@ export class LoginComponent {
       console.log('Usuario logueado:', user);
 
       // Redirección por rol
-      if (user.role === 'admin') this.router.navigate(['/perfil-usuario']);
+      if (user.role === 'admin') this.router.navigate(['/admin-dashboard']);
       if (user.role === 'owner') this.router.navigate(['/owner-dashboard']);
       if (user.role === 'driver') this.router.navigate(['/perfil-usuario']);
     }

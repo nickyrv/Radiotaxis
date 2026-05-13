@@ -5,6 +5,8 @@ import { routes } from './app/app.routes';
 import { importProvidersFrom } from '@angular/core';
 import { LucideAngularModule, X, Car, LogOut, Menu, DollarSign, Wrench, TrendingUp } from 'lucide-angular';
 
+
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),
