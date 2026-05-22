@@ -4,7 +4,8 @@
   <aside
     class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out"
     [class.translate-x-0]="sidebarOpen || windowWidth >= 1024"
-[class.-translate-x-full]="!sidebarOpen && windowWidth < 1024"  >
+    [class.-translate-x-full]="!sidebarOpen && windowWidth < 1024"
+  >
 
     <div class="flex flex-col h-full">
 
@@ -98,39 +99,36 @@
     <!-- Content -->
     <div class="p-6 lg:p-8">
 
-     <div *ngIf="currentView === 'overview'">
-       <app-admin-overview></app-admin-overview>
+      <div *ngIf="currentView === 'overview'">
+        <app-admin-overview></app-admin-overview>
       </div>
 
       <div *ngIf="currentView === 'vehicles'">
-           <app-vehicles-management></app-vehicles-management>
+        <app-vehicles-management></app-vehicles-management>
       </div>
 
       <div *ngIf="currentView === 'drivers'">
-        <app-drivers-management
-          *ngIf="currentView === 'drivers'">
-        </app-drivers-management>
+        <app-drivers-management></app-drivers-management>
       </div>
 
       <div *ngIf="currentView === 'owners'">
-        <app-owners-management>
-          *ngIf="currentView === 'owners'">
-        </app-owners-management>
+        <app-owners-management></app-owners-management>
+      </div>
+
+      <div *ngIf="currentView === 'trips'">
+        <app-trips-management></app-trips-management>
       </div>
 
       <div *ngIf="currentView === 'shifts'">
-       <app-shifts-management>
-        *ngIf="currentView === 'shifts'"
-       </app-shifts-management>
+        <app-shifts-management></app-shifts-management>
       </div>
 
       <div *ngIf="currentView === 'alerts'">
-        <app-alerts-management
-        *ngIf="currentView === 'alerts'">
-      </app-alerts-management>
+        <app-alerts-management></app-alerts-management>
       </div>
 
     </div>
 
   </main>
 
+</div>

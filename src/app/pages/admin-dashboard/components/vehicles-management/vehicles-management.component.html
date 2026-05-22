@@ -100,7 +100,7 @@
             </td>
 
             <td class="px-6 py-4">
-              {{ getOwnerName(vehicle.ownerId) }}
+              {{ getOwnerName(vehicle.owner_id) }}
             </td>
 
             <td class="px-6 py-4">
@@ -117,7 +117,7 @@
             </td>
 
             <td class="px-6 py-4">
-              {{ vehicle.nextMaintenance }}
+              {{ vehicle.next_maintenance }}
             </td>
 
             <td class="px-6 py-4">
@@ -152,4 +152,151 @@
 
   </div>
 
+</div>
+<!-- FORM MODAL -->
+
+<div
+  *ngIf="showForm"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
+    <div class="p-6 border-b border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-900">
+        {{ editingVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo' }}
+      </h2>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Placa *
+          </label>
+
+          <input
+            type="text"
+            placeholder="ABC-123"
+            [(ngModel)]="vehicleForm.plate"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Modelo *
+          </label>
+
+          <input
+            type="text"
+            placeholder="Toyota Corolla"
+            [(ngModel)]="vehicleForm.model"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Año *
+          </label>
+
+          <input
+            type="number"
+            placeholder="2020"
+            [(ngModel)]="vehicleForm.year"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Propietario
+          </label>
+
+          <input
+            type="number"
+            placeholder="ID propietario"
+            [(ngModel)]="vehicleForm.owner_id"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Estado *
+          </label>
+
+          <select
+            [(ngModel)]="vehicleForm.status"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="active">Activo</option>
+            <option value="maintenance">Mantenimiento</option>
+            <option value="inactive">Inactivo</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Último Mantenimiento
+          </label>
+
+          <input
+            type="date"
+            [(ngModel)]="vehicleForm.last_maintenance"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Próximo Mantenimiento
+          </label>
+
+          <input
+            type="date"
+            [(ngModel)]="vehicleForm.next_maintenance"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Vencimiento Documentación
+          </label>
+
+          <input
+            type="date"
+            [(ngModel)]="vehicleForm.document_expiry"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+
+      <button
+        type="button"
+        (click)="closeModal()"
+        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        (click)="saveVehicle()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Guardar
+      </button>
+
+    </div>
+
+  </div>
 </div>

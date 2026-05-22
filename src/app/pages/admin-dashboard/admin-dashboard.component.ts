@@ -7,12 +7,14 @@ import { DriversManagementComponent } from './components/drivers-management/driv
 import { OwnersManagementComponent } from './components/owners-management/owners-management.component';
 import { ShiftsManagementComponent } from './components/shifts-management/shifts-management.component';
 import { AlertsManagementComponent } from './components/alerts-management/alerts-management.component';
+import { TripsManagementComponent } from './components/trips-management/trips-management.component';
 
 type AdminView =
   | 'overview'
   | 'vehicles'
   | 'drivers'
   | 'owners'
+  | 'trips'
   | 'shifts'
   | 'alerts';
 
@@ -26,7 +28,8 @@ type AdminView =
     DriversManagementComponent,
     OwnersManagementComponent,
     ShiftsManagementComponent,
-    AlertsManagementComponent
+    AlertsManagementComponent,
+    TripsManagementComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
@@ -49,7 +52,9 @@ export class AdminDashboardComponent implements OnInit {
     { id: 'drivers', label: 'Conductores' },
     { id: 'owners', label: 'Propietarios' },
     { id: 'shifts', label: 'Relevos' },
-    { id: 'alerts', label: 'Alertas' }
+    { id: 'alerts', label: 'Alertas' },
+    { id: 'trips', label: 'Viajes' }
+
   ];
 
   ngOnInit() {

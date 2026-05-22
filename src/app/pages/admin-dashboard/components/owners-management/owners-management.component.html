@@ -12,14 +12,12 @@
     </div>
 
     <button
-      (click)="showForm = true"
+      (click)="openNewOwnerForm()"
       class="bg-blue-600 text-white px-4 py-2 rounded-lg"
     >
       Nuevo Propietario
     </button>
   </div>
-
-  <!-- Buscador -->
 
   <div class="bg-white p-4 rounded-lg border">
     <input
@@ -30,30 +28,34 @@
     />
   </div>
 
-  <!-- Cards -->
-
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
     <div
       *ngFor="let owner of filteredOwners"
       class="bg-white border rounded-lg p-6"
     >
-
       <h3 class="text-xl font-semibold text-gray-900">
         {{ owner.name }}
       </h3>
 
       <p class="text-gray-600 mt-2">
-        {{ owner.email }}
+        CI: {{ owner.ci || 'Sin CI' }}
       </p>
 
       <p class="text-gray-600">
-        {{ owner.phone }}
+        {{ owner.email || 'Sin email' }}
+      </p>
+
+      <p class="text-gray-600">
+        {{ owner.phone || 'Sin teléfono' }}
       </p>
 
       <p class="text-gray-700 mt-3">
-        Vehículos:
-        {{ getVehiclesInfo(owner.vehicleIds) }}
+        Dirección: {{ owner.address || 'Sin dirección' }}
+      </p>
+
+      <p class="text-gray-500 text-sm mt-2">
+        Registro: {{ owner.join_date || 'Sin fecha' }}
       </p>
 
       <div class="flex gap-2 mt-4">
@@ -79,37 +81,26 @@
   </div>
 
 </div>
+
 <!-- FORM MODAL -->
 
 <div
   *ngIf="showForm"
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 >
-
   <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
 
-    <!-- Header -->
-
     <div class="p-6 border-b border-gray-200">
-
       <h2 class="text-gray-900 text-2xl font-bold">
-
         {{ editingOwner ? 'Editar Propietario' : 'Nuevo Propietario' }}
-
       </h2>
-
     </div>
-
-    <!-- Form -->
 
     <div class="p-6 space-y-4">
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        <!-- Nombre -->
-
         <div>
-
           <label class="block text-gray-700 mb-2">
             Nombre Completo *
           </label>
@@ -117,16 +108,25 @@
           <input
             type="text"
             placeholder="Juan Propietario"
-            [value]="editingOwner?.name || ''"
+            [(ngModel)]="ownerForm.name"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
         </div>
 
-        <!-- Teléfono -->
+        <div>
+          <label class="block text-gray-700 mb-2">
+            CI
+          </label>
+
+          <input
+            type="text"
+            placeholder="1234567"
+            [(ngModel)]="ownerForm.ci"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
         <div>
-
           <label class="block text-gray-700 mb-2">
             Teléfono *
           </label>
@@ -134,16 +134,12 @@
           <input
             type="tel"
             placeholder="+591 77777777"
-            [value]="editingOwner?.phone || ''"
+            [(ngModel)]="ownerForm.phone"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
         </div>
 
-        <!-- Email -->
-
-        <div class="md:col-span-2">
-
+        <div>
           <label class="block text-gray-700 mb-2">
             Email *
           </label>
@@ -151,64 +147,67 @@
           <input
             type="email"
             placeholder="correo@ejemplo.com"
-            [value]="editingOwner?.email || ''"
+            [(ngModel)]="ownerForm.email"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
         </div>
 
-        <!-- Vehículos -->
-
         <div class="md:col-span-2">
-
           <label class="block text-gray-700 mb-2">
-            Vehículos Asignados
+            Dirección
           </label>
 
-          <div class="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
+          <input
+            type="text"
+            placeholder="La Paz"
+            [(ngModel)]="ownerForm.address"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-            <label
-              *ngFor="let vehicle of mockVehicles"
-              class="flex items-center gap-2 cursor-pointer"
-            >
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Estado
+          </label>
 
-              <input
-                type="checkbox"
-                [checked]="editingOwner?.vehicleIds?.includes(vehicle.id)"
-                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
+          <select
+            [(ngModel)]="ownerForm.status"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="active">Activo</option>
+            <option value="inactive">Inactivo</option>
+          </select>
+        </div>
 
-              <span class="text-gray-700">
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Fecha de Registro
+          </label>
 
-                {{ vehicle.plate }} -
-                {{ vehicle.model }}
-                ({{ vehicle.year }})
-
-              </span>
-
-            </label>
-
-          </div>
-
+          <input
+            type="date"
+            [(ngModel)]="ownerForm.join_date"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
         </div>
 
       </div>
 
     </div>
 
-    <!-- Footer -->
-
     <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
 
       <button
-        (click)="showForm = false"
+        type="button"
+        (click)="closeModal()"
         class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
       >
         Cancelar
       </button>
 
       <button
-        (click)="showForm = false"
+        type="button"
+        (click)="saveOwner()"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
       >
         Guardar
@@ -217,5 +216,4 @@
     </div>
 
   </div>
-
 </div>

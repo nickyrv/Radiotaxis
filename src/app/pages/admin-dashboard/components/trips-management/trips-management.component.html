@@ -1,0 +1,247 @@
+<div class="space-y-6">
+
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Gestión de Viajes
+      </h1>
+
+      <p class="text-gray-600 mt-1">
+        Administre los viajes y servicios realizados
+      </p>
+    </div>
+
+    <button
+      (click)="openNewTripForm()"
+      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+    >
+      Nuevo Viaje
+    </button>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-4">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Buscar por origen, destino o pasajero..."
+      class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+    />
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+
+      <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-3 text-left">Origen</th>
+            <th class="px-6 py-3 text-left">Destino</th>
+            <th class="px-6 py-3 text-left">Fecha</th>
+            <th class="px-6 py-3 text-left">Precio</th>
+            <th class="px-6 py-3 text-left">Conductor</th>
+            <th class="px-6 py-3 text-left">Vehículo</th>
+            <th class="px-6 py-3 text-left">Estado</th>
+            <th class="px-6 py-3 text-left">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-200">
+          <tr
+            *ngFor="let trip of filteredTrips"
+            class="hover:bg-gray-50"
+          >
+            <td class="px-6 py-4">{{ trip.origin }}</td>
+            <td class="px-6 py-4">{{ trip.destination }}</td>
+            <td class="px-6 py-4">{{ trip.trip_date }}</td>
+            <td class="px-6 py-4">Bs. {{ trip.price }}</td>
+            <td class="px-6 py-4">{{ getDriverName(trip.driver_id) }}</td>
+            <td class="px-6 py-4">{{ getVehiclePlate(trip.vehicle_id) }}</td>
+
+            <td class="px-6 py-4">
+              <span
+                [class]="
+                  'px-2 py-1 rounded-full text-sm ' +
+                  getStatusColor(trip.status)
+                "
+              >
+                {{ getStatusLabel(trip.status) }}
+              </span>
+            </td>
+
+            <td class="px-6 py-4">
+              <div class="flex gap-2">
+                <button
+                  (click)="handleEdit(trip)"
+                  class="px-3 py-1 bg-blue-600 text-white rounded-lg"
+                >
+                  Editar
+                </button>
+
+                <button
+                  (click)="handleDelete(trip.id)"
+                  class="px-3 py-1 bg-red-600 text-white rounded-lg"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+
+<div
+  *ngIf="showForm"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+
+    <div class="p-6 border-b border-gray-200">
+      <h2 class="text-2xl font-bold text-gray-900">
+        {{ editingTrip ? 'Editar Viaje' : 'Nuevo Viaje' }}
+      </h2>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+          <label class="block text-gray-700 mb-2">Origen *</label>
+          <input
+            type="text"
+            [(ngModel)]="tripForm.origin"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Destino *</label>
+          <input
+            type="text"
+            [(ngModel)]="tripForm.destination"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Fecha y hora *</label>
+          <input
+            type="datetime-local"
+            [(ngModel)]="tripForm.trip_date"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Precio *</label>
+          <input
+            type="number"
+            [(ngModel)]="tripForm.price"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Conductor</label>
+          <select
+            [(ngModel)]="tripForm.driver_id"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option [ngValue]="null">Sin conductor</option>
+            <option
+              *ngFor="let driver of drivers"
+              [ngValue]="driver.id"
+            >
+              {{ driver.name }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Vehículo</label>
+          <select
+            [(ngModel)]="tripForm.vehicle_id"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option [ngValue]="null">Sin vehículo</option>
+            <option
+              *ngFor="let vehicle of vehicles"
+              [ngValue]="vehicle.id"
+            >
+              {{ vehicle.plate }} - {{ vehicle.model }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Pasajero</label>
+          <input
+            type="text"
+            [(ngModel)]="tripForm.passenger_name"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Teléfono pasajero</label>
+          <input
+            type="text"
+            [(ngModel)]="tripForm.passenger_phone"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Estado</label>
+          <select
+            [(ngModel)]="tripForm.status"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="pending">Pendiente</option>
+            <option value="completed">Completado</option>
+            <option value="cancelled">Cancelado</option>
+          </select>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-gray-700 mb-2">Observaciones</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="tripForm.observations"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          ></textarea>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
+
+      <button
+        type="button"
+        (click)="closeModal()"
+        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        (click)="saveTrip()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Guardar
+      </button>
+
+    </div>
+
+  </div>
+</div>
