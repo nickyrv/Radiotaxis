@@ -8,6 +8,7 @@ import { OwnersManagementComponent } from './components/owners-management/owners
 import { ShiftsManagementComponent } from './components/shifts-management/shifts-management.component';
 import { AlertsManagementComponent } from './components/alerts-management/alerts-management.component';
 import { TripsManagementComponent } from './components/trips-management/trips-management.component';
+import { PaymentsManagementComponent } from './components/payments-management/payments-management.component';
 
 type AdminView =
   | 'overview'
@@ -16,7 +17,8 @@ type AdminView =
   | 'owners'
   | 'trips'
   | 'shifts'
-  | 'alerts';
+  | 'alerts'
+  | 'payments' ;
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -29,7 +31,8 @@ type AdminView =
     OwnersManagementComponent,
     ShiftsManagementComponent,
     AlertsManagementComponent,
-    TripsManagementComponent
+    TripsManagementComponent,
+    PaymentsManagementComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
@@ -53,7 +56,8 @@ export class AdminDashboardComponent implements OnInit {
     { id: 'owners', label: 'Propietarios' },
     { id: 'shifts', label: 'Relevos' },
     { id: 'alerts', label: 'Alertas' },
-    { id: 'trips', label: 'Viajes' }
+    { id: 'trips', label: 'Viajes' },
+    { id: 'payments', label: 'Pagos' }
 
   ];
 

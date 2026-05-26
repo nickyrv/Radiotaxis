@@ -1,0 +1,222 @@
+<div class="space-y-6">
+
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Gestión de Pagos</h1>
+      <p class="text-gray-600">Administre pagos y entregas</p>
+    </div>
+
+    <button
+      (click)="openNewPaymentForm()"
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg"
+    >
+      Nuevo Pago
+    </button>
+  </div>
+
+  <div class="bg-white rounded-lg border p-4">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Buscar por concepto..."
+      class="w-full px-4 py-2 border rounded-lg"
+    />
+  </div>
+
+  <div class="bg-white rounded-lg border overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left">Fecha</th>
+          <th class="px-4 py-3 text-left">Concepto</th>
+          <th class="px-4 py-3 text-left">Conductor</th>
+          <th class="px-4 py-3 text-left">Vehículo</th>
+          <th class="px-4 py-3 text-left">Tipo</th>
+          <th class="px-4 py-3 text-left">Estado</th>
+          <th class="px-4 py-3 text-right">Monto</th>
+          <th class="px-4 py-3 text-left">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y">
+        <tr *ngFor="let payment of filteredPayments">
+          <td class="px-4 py-3">{{ payment.payment_date }}</td>
+          <td class="px-4 py-3">{{ payment.concept }}</td>
+          <td class="px-4 py-3">{{ getDriverName(payment.driver_id) }}</td>
+          <td class="px-4 py-3">{{ getVehiclePlate(payment.vehicle_id) }}</td>
+          <td class="px-4 py-3">{{ payment.type }}</td>
+
+          <td class="px-4 py-3">
+            <span
+              class="px-2 py-1 rounded-full text-sm"
+              [ngClass]="getStatusColor(payment.status)"
+            >
+              {{ getStatusLabel(payment.status) }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-right">
+            Bs. {{ payment.amount }}
+          </td>
+
+          <td class="px-4 py-3">
+            <div class="flex gap-2">
+              <button
+                (click)="handleEdit(payment)"
+                class="px-3 py-1 bg-blue-600 text-white rounded-lg"
+              >
+                Editar
+              </button>
+
+              <button
+                (click)="handleDelete(payment.id)"
+                class="px-3 py-1 bg-red-600 text-white rounded-lg"
+              >
+                Eliminar
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+
+<div
+  *ngIf="showForm"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+
+    <div class="p-6 border-b">
+      <h2 class="text-2xl font-bold text-gray-900">
+        {{ editingPayment ? 'Editar Pago' : 'Nuevo Pago' }}
+      </h2>
+    </div>
+
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div>
+        <label class="block text-gray-700 mb-2">Conductor</label>
+        <select
+          [(ngModel)]="paymentForm.driver_id"
+          class="w-full px-4 py-2 border rounded-lg"
+        >
+          <option [ngValue]="null">Sin conductor</option>
+          <option *ngFor="let driver of drivers" [ngValue]="driver.id">
+            {{ driver.name }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Vehículo</label>
+        <select
+          [(ngModel)]="paymentForm.vehicle_id"
+          class="w-full px-4 py-2 border rounded-lg"
+        >
+          <option [ngValue]="null">Sin vehículo</option>
+          <option *ngFor="let vehicle of vehicles" [ngValue]="vehicle.id">
+            {{ vehicle.plate }} - {{ vehicle.model }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Viaje</label>
+        <select
+          [(ngModel)]="paymentForm.trip_id"
+          class="w-full px-4 py-2 border rounded-lg"
+        >
+          <option [ngValue]="null">Sin viaje</option>
+          <option *ngFor="let trip of trips" [ngValue]="trip.id">
+            {{ trip.origin }} - {{ trip.destination }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Monto</label>
+        <input
+          type="number"
+          [(ngModel)]="paymentForm.amount"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Tipo</label>
+        <select
+          [(ngModel)]="paymentForm.type"
+          class="w-full px-4 py-2 border rounded-lg"
+        >
+          <option value="daily">Diario</option>
+          <option value="weekly">Semanal</option>
+          <option value="monthly">Mensual</option>
+          <option value="trip">Viaje</option>
+          <option value="commission">Comisión</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Estado</label>
+        <select
+          [(ngModel)]="paymentForm.status"
+          class="w-full px-4 py-2 border rounded-lg"
+        >
+          <option value="paid">Pagado</option>
+          <option value="pending">Pendiente</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Fecha</label>
+        <input
+          type="date"
+          [(ngModel)]="paymentForm.payment_date"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-gray-700 mb-2">Concepto</label>
+        <input
+          type="text"
+          [(ngModel)]="paymentForm.concept"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-gray-700 mb-2">Observaciones</label>
+        <textarea
+          rows="3"
+          [(ngModel)]="paymentForm.observations"
+          class="w-full px-4 py-2 border rounded-lg"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end gap-3">
+      <button
+        (click)="closeModal()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        (click)="savePayment()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Guardar
+      </button>
+    </div>
+
+  </div>
+</div>

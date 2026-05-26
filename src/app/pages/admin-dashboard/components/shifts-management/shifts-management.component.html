@@ -1,11 +1,9 @@
 <div class="space-y-6">
 
   <!-- Header -->
-
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
     <div>
-
       <h1 class="text-2xl font-bold text-gray-900">
         Gestión de Relevos
       </h1>
@@ -13,11 +11,10 @@
       <p class="text-gray-600 mt-1">
         Administre los turnos de conductores
       </p>
-
     </div>
 
     <button
-      (click)="showForm = true"
+      (click)="openNewShiftForm()"
       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
     >
       Programar Relevo
@@ -26,7 +23,6 @@
   </div>
 
   <!-- Timeline -->
-
   <div class="bg-white rounded-lg border border-gray-200 p-6">
 
     <h3 class="text-xl font-semibold text-gray-900 mb-6">
@@ -36,7 +32,7 @@
     <div class="space-y-4">
 
       <div
-        *ngFor="let shift of shifts"
+        *ngFor="let shift of filteredShifts"
         class="relative pl-8 pb-8 border-l-2 border-gray-200"
       >
 
@@ -51,16 +47,16 @@
 
         <div class="bg-gray-50 rounded-lg p-4">
 
-          <div class="flex justify-between items-center mb-3">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3">
 
-            <div class="flex gap-4">
+            <div class="flex flex-col sm:flex-row gap-4">
 
               <span class="text-gray-900">
-                {{ getVehiclePlate(shift.vehicleId) }}
+                Vehículo: {{ getVehiclePlate(shift.vehicle_id) }}
               </span>
 
               <span class="text-gray-700">
-                {{ getDriverName(shift.driverId) }}
+                Conductor: {{ getDriverName(shift.driver_id) }}
               </span>
 
             </div>
@@ -74,17 +70,35 @@
 
           </div>
 
-          <div class="flex gap-6 text-sm text-gray-600">
+          <div class="flex flex-col sm:flex-row gap-6 text-sm text-gray-600">
 
             <span>
               Inicio:
-              {{ formatDateTime(shift.startTime) }}
+              {{ formatDateTime(shift.start_time) }}
             </span>
 
             <span>
               Fin:
-              {{ formatDateTime(shift.endTime) }}
+              {{ formatDateTime(shift.end_time) }}
             </span>
+
+          </div>
+
+          <div class="flex gap-2 mt-4">
+
+            <button
+              (click)="handleEdit(shift)"
+              class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Editar
+            </button>
+
+            <button
+              (click)="handleDelete(shift.id)"
+              class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Eliminar
+            </button>
 
           </div>
 
@@ -97,6 +111,7 @@
   </div>
 
 </div>
+
 <!-- FORM MODAL -->
 
 <div
@@ -104,26 +119,23 @@
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 >
 
-  <div class="bg-white rounded-lg max-w-2xl w-full">
+  <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
 
     <!-- Header -->
-
     <div class="p-6 border-b border-gray-200">
 
       <h2 class="text-2xl font-bold text-gray-900">
-        Programar Nuevo Relevo
+        {{ editingShift ? 'Editar Relevo' : 'Programar Nuevo Relevo' }}
       </h2>
 
     </div>
 
     <!-- Formulario -->
-
     <div class="p-6 space-y-4">
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <!-- Vehículo -->
-
         <div>
 
           <label class="block text-gray-700 mb-2">
@@ -131,16 +143,17 @@
           </label>
 
           <select
+            [(ngModel)]="shiftForm.vehicle_id"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
 
-            <option value="">
+            <option [ngValue]="null">
               Seleccionar vehículo...
             </option>
 
             <option
-              *ngFor="let vehicle of mockVehicles"
-              [value]="vehicle.id"
+              *ngFor="let vehicle of vehicles"
+              [ngValue]="vehicle.id"
             >
               {{ vehicle.plate }} - {{ vehicle.model }}
             </option>
@@ -150,7 +163,6 @@
         </div>
 
         <!-- Conductor -->
-
         <div>
 
           <label class="block text-gray-700 mb-2">
@@ -158,16 +170,17 @@
           </label>
 
           <select
+            [(ngModel)]="shiftForm.driver_id"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
 
-            <option value="">
+            <option [ngValue]="null">
               Seleccionar conductor...
             </option>
 
             <option
-              *ngFor="let driver of mockDrivers"
-              [value]="driver.id"
+              *ngFor="let driver of drivers"
+              [ngValue]="driver.id"
             >
               {{ driver.name }}
             </option>
@@ -177,7 +190,6 @@
         </div>
 
         <!-- Inicio -->
-
         <div>
 
           <label class="block text-gray-700 mb-2">
@@ -186,13 +198,13 @@
 
           <input
             type="datetime-local"
+            [(ngModel)]="shiftForm.start_time"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
         </div>
 
         <!-- Fin -->
-
         <div>
 
           <label class="block text-gray-700 mb-2">
@@ -201,25 +213,40 @@
 
           <input
             type="datetime-local"
+            [(ngModel)]="shiftForm.end_time"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+
+        </div>
+
+        <!-- Estado -->
+        <div>
+
+          <label class="block text-gray-700 mb-2">
+            Estado
+          </label>
+
+          <select
+            [(ngModel)]="shiftForm.status"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="scheduled">Programado</option>
+            <option value="active">En curso</option>
+            <option value="completed">Completado</option>
+          </select>
 
         </div>
 
       </div>
 
       <!-- Consejo -->
-
       <div class="p-4 bg-blue-50 rounded-lg">
 
         <p class="text-sm text-gray-700">
-
           <span class="text-blue-600 font-semibold">
             💡 Consejo:
           </span>
-
           Asegúrese de que el conductor esté disponible y el vehículo no tenga otro relevo programado en el mismo horario.
-
         </p>
 
       </div>
@@ -227,21 +254,22 @@
     </div>
 
     <!-- Footer -->
-
     <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
 
       <button
-        (click)="showForm = false"
+        type="button"
+        (click)="closeModal()"
         class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
       >
         Cancelar
       </button>
 
       <button
-        (click)="showForm = false"
+        type="button"
+        (click)="saveShift()"
         class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
       >
-        Programar Relevo
+        Guardar
       </button>
 
     </div>
