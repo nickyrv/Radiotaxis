@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,13 +17,13 @@ type UserRole = 'admin' | 'owner' | 'driver';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
 
   selectedRole: UserRole = 'admin';
 
   email = '';
   password = '';
-
+  showPassword = false;
   loginMessage = '';
 
   failedAttempts = 0;
@@ -35,10 +35,27 @@ export class LoginComponent {
   notificationMessage = '';
   notificationType: 'success' | 'error' | 'warning' = 'error';
 
+  showForgotPassword = false;
+  recoveryEmail = '';
+
   constructor(
     private router: Router,
     private authService: AuthService
   ) {}
+
+  ngOnInit() {
+    const savedAttempts = localStorage.getItem('failedAttempts');
+    const savedBlocked = localStorage.getItem('isBlocked');
+
+    if (savedAttempts) {
+      this.failedAttempts = Number(savedAttempts);
+    }
+
+    if (savedBlocked === 'true') {
+      this.isBlocked = true;
+      this.loginMessage = 'Acceso bloqueado';
+    }
+  }
 
   selectRole(role: UserRole) {
     if (this.isBlocked) return;
@@ -57,6 +74,67 @@ export class LoginComponent {
     this.notificationType = type;
     this.showNotification = true;
   }
+
+  openForgotPassword() {
+    this.recoveryEmail = this.email;
+    this.showForgotPassword = true;
+  }
+
+ sendRecoveryEmail() {
+
+  if (!this.recoveryEmail) {
+    this.showLoginNotification(
+      'Correo requerido',
+      'Debe ingresar su correo para recuperar la contraseña.',
+      'warning'
+    );
+    return;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailRegex.test(this.recoveryEmail)) {
+    this.showLoginNotification(
+      'Correo inválido',
+      'Debe ingresar un correo válido.',
+      'warning'
+    );
+    return;
+  }
+
+  this.authService.forgotPassword(this.recoveryEmail).subscribe({
+
+    next: () => {
+
+      this.showForgotPassword = false;
+
+      // DESBLOQUEAR LOGIN
+
+      this.failedAttempts = 0;
+      this.isBlocked = false;
+
+      localStorage.removeItem('failedAttempts');
+      localStorage.removeItem('isBlocked');
+
+      this.showLoginNotification(
+        'Acceso desbloqueado',
+        'Se enviaron instrucciones al correo registrado. Ya puede intentar ingresar nuevamente.',
+        'success'
+      );
+    },
+
+    error: () => {
+
+      this.showLoginNotification(
+        'Correo no registrado',
+        'No existe una cuenta asociada a ese correo.',
+        'error'
+      );
+    }
+
+  });
+
+}
 
   loginUser() {
 
@@ -78,6 +156,17 @@ export class LoginComponent {
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(this.email)) {
+      this.showLoginNotification(
+        'Correo inválido',
+        'Debe ingresar un correo válido, por ejemplo: usuario@radiotaxi.com',
+        'warning'
+      );
+      return;
+    }
+
     this.authService.login({
       email: this.email,
       password: this.password,
@@ -86,6 +175,10 @@ export class LoginComponent {
       next: (user: LoginResponse) => {
 
         this.failedAttempts = 0;
+        this.isBlocked = false;
+
+        localStorage.removeItem('failedAttempts');
+        localStorage.removeItem('isBlocked');
 
         localStorage.setItem(
           'currentUser',
@@ -121,11 +214,18 @@ export class LoginComponent {
 
         this.failedAttempts++;
 
+        localStorage.setItem(
+          'failedAttempts',
+          this.failedAttempts.toString()
+        );
+
         const remainingAttempts =
           this.maxAttempts - this.failedAttempts;
 
         if (this.failedAttempts >= this.maxAttempts) {
           this.isBlocked = true;
+
+          localStorage.setItem('isBlocked', 'true');
 
           this.loginMessage = 'Acceso bloqueado';
 

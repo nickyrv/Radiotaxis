@@ -1,165 +1,417 @@
 <div class="space-y-6">
 
-  <!-- HEADER -->
+  <div *ngIf="!selectedVehicle">
 
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+          Gestión de Vehículos
+        </h1>
+        <p class="text-gray-600 mt-1">
+          Seleccione un vehículo para ver su historial y detalles
+        </p>
+      </div>
 
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900">
-        Gestión de Vehículos
-      </h1>
+      <button
+        (click)="openNewVehicleForm()"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+      >
+        Nuevo Vehículo
+      </button>
+    </div>
 
-      <p class="text-gray-600 mt-1">
-        Administre la flota de vehículos
+    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <input
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Buscar por placa, modelo, código o color..."
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div
+        *ngFor="let vehicle of filteredVehicles"
+        (click)="selectVehicle(vehicle)"
+        class="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:shadow-lg transition-all"
+      >
+
+        <div class="h-48 bg-gray-100">
+          <img
+            *ngIf="vehicle.photo_url"
+            [src]="vehicle.photo_url"
+            class="w-full h-full object-cover"
+          />
+
+          <div
+            *ngIf="!vehicle.photo_url"
+            class="w-full h-full flex items-center justify-center text-gray-400"
+          >
+            Sin foto
+          </div>
+        </div>
+
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xl font-bold text-gray-900">
+              {{ vehicle.plate }}
+            </h3>
+
+            <div class="flex gap-2 flex-wrap">
+
+  <span
+    class="px-2 py-1 rounded-full text-xs"
+    [ngClass]="getStatusColor(vehicle.status)"
+  >
+    {{ getStatusLabel(vehicle.status) }}
+  </span>
+
+  <span
+    class="px-2 py-1 rounded-full text-xs"
+    [ngClass]="{
+      'bg-green-100 text-green-700': vehicle.management_status === 'active',
+      'bg-red-100 text-red-700': vehicle.management_status === 'inactive'
+    }"
+  >
+    {{ getManagementStatusLabel(vehicle.management_status) }}
+  </span>
+
+</div>
+          </div>
+
+          <p class="text-gray-600">
+            {{ vehicle.model }} - {{ vehicle.year }}
+          </p>
+
+          <p class="text-gray-600 text-sm mt-1">
+            {{ getServiceTypeLabel(vehicle.service_type) }}
+            <span *ngIf="vehicle.service_type === 'radio_taxi'">
+              | Código: {{ vehicle.radio_code }}
+            </span>
+          </p>
+
+          <p class="text-gray-600 text-sm mt-1">
+            Color: {{ vehicle.color || 'Sin color' }}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div *ngIf="selectedVehicle" class="space-y-6">
+
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+      <div class="flex items-center gap-4">
+        <button
+          type="button"
+          (click)="backToList()"
+          class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          ← Volver
+        </button>
+
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">
+            {{ selectedVehicle.plate }}
+          </h1>
+          <p class="text-gray-600">
+            {{ selectedVehicle.model }} - {{ selectedVehicle.year }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="handleEdit(selectedVehicle)"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+        >
+          Editar vehículo
+        </button>
+
+        <button
+          *ngIf="selectedVehicle.management_status === 'active'"
+          type="button"
+          (click)="handleDeactivate(selectedVehicle)"
+          class="px-4 py-2 bg-yellow-500 text-white rounded-lg"
+        >
+          Dar de baja
+        </button>
+
+        <button
+          *ngIf="selectedVehicle.management_status === 'inactive'"
+          type="button"
+          (click)="handleActivate(selectedVehicle)"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg"
+        >
+          Reactivar
+        </button>
+
+        <button
+          type="button"
+          (click)="handleDelete(selectedVehicle.id)"
+          class="px-4 py-2 bg-red-600 text-white rounded-lg"
+        >
+          Eliminar
+        </button>
+      </div>
+
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div class="h-72 bg-gray-100">
+          <img
+            *ngIf="selectedVehicle.photo_url"
+            [src]="selectedVehicle.photo_url"
+            class="w-full h-full object-cover"
+          />
+
+          <div
+            *ngIf="!selectedVehicle.photo_url"
+            class="w-full h-full flex items-center justify-center text-gray-400"
+          >
+            Sin foto
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">
+          Información del vehículo
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div>
+            <p class="text-sm text-gray-500">Propietario</p>
+            <p class="text-gray-900 font-medium">
+              {{ getOwnerName(selectedVehicle.owner_id) }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-sm text-gray-500">Tipo de servicio</p>
+            <p class="text-gray-900 font-medium">
+              {{ getServiceTypeLabel(selectedVehicle.service_type) }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Estado operativo</p>
+
+            <span
+              class="inline-block mt-1 px-2 py-1 rounded-full text-sm"
+              [ngClass]="getStatusColor(selectedVehicle.status)"
+            >
+              {{ getStatusLabel(selectedVehicle.status) }}
+            </span>
+          </div>
+
+          <div>
+            <p class="text-sm text-gray-500">Fecha de registro</p>
+
+            <p class="text-gray-900 font-medium">
+              {{ selectedVehicle.registration_date || 'Sin fecha registrada' }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Código interno</p>
+            <p class="text-gray-900 font-medium">
+              {{ selectedVehicle.radio_code || 'No aplica' }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-sm text-gray-500">Color</p>
+            <p class="text-gray-900 font-medium">
+              {{ selectedVehicle.color || 'Sin color' }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-sm text-gray-500">Restricción</p>
+            <p class="text-gray-900 font-medium">
+              {{ selectedVehicle.restriction_day || 'Sin dato' }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-sm text-gray-500">Tipo administración</p>
+            <p class="text-gray-900 font-medium">
+              {{ selectedVehicle.management_type }}
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <div class="flex flex-wrap gap-2">
+
+        <button
+          type="button"
+          (click)="setDetailTab('mantenimiento')"
+          [ngClass]="activeDetailTab === 'mantenimiento'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-gray-700'"
+          class="px-4 py-2 rounded-lg"
+        >
+          Mantenimiento
+        </button>
+
+        <button
+          type="button"
+          (click)="setDetailTab('accidentes')"
+          [ngClass]="activeDetailTab === 'accidentes'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-gray-700'"
+          class="px-4 py-2 rounded-lg"
+        >
+          Accidentes
+        </button>
+
+        <button
+          type="button"
+          (click)="setDetailTab('conductores')"
+          [ngClass]="activeDetailTab === 'conductores'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-100 text-gray-700'"
+          class="px-4 py-2 rounded-lg"
+        >
+          Conductores
+        </button>
+
+      </div>
+    </div>
+
+    <div
+      *ngIf="activeDetailTab === 'mantenimiento'"
+      class="bg-white rounded-xl border border-gray-200 p-6"
+    >
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">
+          Historial de mantenimiento
+        </h3>
+
+        <button
+          type="button"
+          (click)="openNewHistoryForm()"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+        >
+          Nuevo registro
+        </button>
+      </div>
+
+      <div class="space-y-3">
+
+        <div
+          *ngFor="let history of vehicleHistory"
+          class="p-4 bg-gray-50 rounded-lg border border-gray-200"
+        >
+
+          <div class="flex justify-between gap-4">
+
+            <div>
+              <p class="font-medium text-gray-900">
+                {{ history.detail || 'Sin detalle' }}
+              </p>
+
+              <p class="text-sm text-gray-600">
+                Categoría: {{ history.category }}
+              </p>
+
+              <p class="text-sm text-gray-500">
+                {{ history.description || 'Sin descripción' }}
+              </p>
+            </div>
+
+            <div class="text-right">
+              <p class="text-sm text-gray-600">
+                {{ history.event_date }}
+              </p>
+
+              <p class="font-semibold text-gray-900">
+                Bs. {{ history.cost || 0 }}
+              </p>
+
+              <button
+                type="button"
+                (click)="editHistory(history)"
+                class="mt-2 mr-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg"
+              >
+                Editar
+              </button>
+
+              <button
+                type="button"
+                (click)="deleteHistory(history.id)"
+                class="mt-2 px-3 py-1 bg-red-100 text-red-700 rounded-lg"
+              >
+                Eliminar
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <p
+          *ngIf="vehicleHistory.length === 0"
+          class="text-gray-500"
+        >
+          Sin registros cargados todavía.
+        </p>
+
+      </div>
+
+    </div>
+
+    <div
+      *ngIf="activeDetailTab === 'accidentes'"
+      class="bg-white rounded-xl border border-gray-200 p-6"
+    >
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        Accidentes
+      </h3>
+
+      <p class="text-gray-500">
+        Los accidentes se registran desde el botón Nuevo registro seleccionando categoría Accidente.
       </p>
     </div>
 
-    <button
-      (click)="openNewVehicleForm()"
-      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+    <div
+      *ngIf="activeDetailTab === 'conductores'"
+      class="bg-white rounded-xl border border-gray-200 p-6"
     >
-      Nuevo Vehículo
-    </button>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        Historial de conductores
+      </h3>
 
-  </div>
-
-  <!-- SEARCH -->
-
-  <div class="bg-white rounded-lg border border-gray-200 p-4">
-
-    <input
-      type="text"
-      [(ngModel)]="searchTerm"
-      placeholder="Buscar por placa o modelo..."
-      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-    />
-
-  </div>
-
-  <!-- TABLE -->
-
-  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-
-    <div class="overflow-x-auto">
-
-      <table class="w-full">
-
-        <thead class="bg-gray-50 border-b border-gray-200">
-
-          <tr>
-
-            <th class="px-6 py-3 text-left">
-              Placa
-            </th>
-
-            <th class="px-6 py-3 text-left">
-              Modelo
-            </th>
-
-            <th class="px-6 py-3 text-left">
-              Año
-            </th>
-
-            <th class="px-6 py-3 text-left">
-              Propietario
-            </th>
-
-            <th class="px-6 py-3 text-left">
-              Estado
-            </th>
-
-            <th class="px-6 py-3 text-left">
-              Próximo Mant.
-            </th>
-
-            <th class="px-6 py-3 text-left">
-              Acciones
-            </th>
-
-          </tr>
-
-        </thead>
-
-        <tbody class="divide-y divide-gray-200">
-
-          <tr
-            *ngFor="let vehicle of filteredVehicles"
-            class="hover:bg-gray-50"
-          >
-
-            <td class="px-6 py-4">
-              {{ vehicle.plate }}
-            </td>
-
-            <td class="px-6 py-4">
-              {{ vehicle.model }}
-            </td>
-
-            <td class="px-6 py-4">
-              {{ vehicle.year }}
-            </td>
-
-            <td class="px-6 py-4">
-              {{ getOwnerName(vehicle.owner_id) }}
-            </td>
-
-            <td class="px-6 py-4">
-
-              <span
-                [class]="
-                  'px-2 py-1 rounded-full text-sm ' +
-                  getStatusColor(vehicle.status)
-                "
-              >
-                {{ getStatusLabel(vehicle.status) }}
-              </span>
-
-            </td>
-
-            <td class="px-6 py-4">
-              {{ vehicle.next_maintenance }}
-            </td>
-
-            <td class="px-6 py-4">
-
-              <div class="flex gap-2">
-
-                <button
-                  (click)="handleEdit(vehicle)"
-                  class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg"
-                >
-                  Editar
-                </button>
-
-                <button
-                  (click)="handleDelete(vehicle.id)"
-                  class="px-3 py-1 bg-red-100 text-red-700 rounded-lg"
-                >
-                  Eliminar
-                </button>
-
-              </div>
-
-            </td>
-
-          </tr>
-
-        </tbody>
-
-      </table>
-
+      <p class="text-gray-500">
+        Aquí se visualizará el historial de conductores asignados al vehículo.
+      </p>
     </div>
 
   </div>
 
 </div>
-<!-- FORM MODAL -->
+
+<!-- MODAL VEHÍCULO -->
 
 <div
   *ngIf="showForm"
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 >
-  <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+  <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
 
     <div class="p-6 border-b border-gray-200">
       <h2 class="text-2xl font-bold text-gray-900">
@@ -169,65 +421,131 @@
 
     <div class="p-6 space-y-4">
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="flex flex-col sm:flex-row gap-4 items-start">
 
         <div>
+          <img
+            *ngIf="vehicleForm.photo_url"
+            [src]="vehicleForm.photo_url"
+            class="w-32 h-32 object-cover rounded-lg border"
+          />
+
+          <div
+            *ngIf="!vehicleForm.photo_url"
+            class="w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 border"
+          >
+            Sin foto
+          </div>
+        </div>
+
+        <div class="flex-1">
           <label class="block text-gray-700 mb-2">
-            Placa *
+            Foto del vehículo
           </label>
 
           <input
+            type="file"
+            accept="image/*"
+            (change)="onPhotoSelected($event)"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+          <label class="block text-gray-700 mb-2">Placa *</label>
+          <input
             type="text"
-            placeholder="ABC-123"
+            placeholder="123 ABC o 1234 ABC"
             [(ngModel)]="vehicleForm.plate"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg uppercase"
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Tipo de servicio *</label>
+          <select
+            [(ngModel)]="vehicleForm.service_type"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="radio_taxi">Radio taxi</option>
+            <option value="taxi">Taxi</option>
+          </select>
+        </div>
+
+        <div *ngIf="vehicleForm.service_type === 'radio_taxi'">
+          <label class="block text-gray-700 mb-2">Código interno *</label>
+          <input
+            type="text"
+            [(ngModel)]="vehicleForm.radio_code"
+            placeholder="119, 02, 220..."
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
         </div>
 
         <div>
-          <label class="block text-gray-700 mb-2">
-            Modelo *
-          </label>
-
+          <label class="block text-gray-700 mb-2">Modelo *</label>
           <input
             type="text"
-            placeholder="Toyota Corolla"
             [(ngModel)]="vehicleForm.model"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
         </div>
 
         <div>
-          <label class="block text-gray-700 mb-2">
-            Año *
-          </label>
-
+          <label class="block text-gray-700 mb-2">Año *</label>
           <input
             type="number"
-            placeholder="2020"
             [(ngModel)]="vehicleForm.year"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
         </div>
 
         <div>
-          <label class="block text-gray-700 mb-2">
-            Propietario
-          </label>
-
-          <input
-            type="number"
-            placeholder="ID propietario"
+          <label class="block text-gray-700 mb-2">Propietario *</label>
+          <select
             [(ngModel)]="vehicleForm.owner_id"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option [ngValue]="null">Seleccione propietario...</option>
+            <option
+              *ngFor="let owner of owners"
+              [ngValue]="owner.id"
+            >
+              {{ owner.name }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Color</label>
+          <input
+            type="text"
+            [(ngModel)]="vehicleForm.color"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
         </div>
 
         <div>
-          <label class="block text-gray-700 mb-2">
-            Estado *
-          </label>
+          <label class="block text-gray-700 mb-2">Restricción de placa</label>
+          <select
+            [(ngModel)]="vehicleForm.restriction_day"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="">Sin dato</option>
+            <option value="Lunes">Lunes</option>
+            <option value="Martes">Martes</option>
+            <option value="Miércoles">Miércoles</option>
+            <option value="Jueves">Jueves</option>
+            <option value="Viernes">Viernes</option>
+          </select>
+        </div>
 
+        <div>
+          <label class="block text-gray-700 mb-2">Estado operativo *</label>
           <select
             [(ngModel)]="vehicleForm.status"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -239,47 +557,28 @@
         </div>
 
         <div>
-          <label class="block text-gray-700 mb-2">
-            Último Mantenimiento
-          </label>
-
-          <input
-            type="date"
-            [(ngModel)]="vehicleForm.last_maintenance"
+          <label class="block text-gray-700 mb-2">Tipo administración</label>
+          <select
+            [(ngModel)]="vehicleForm.management_type"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
+          >
+            <option value="solo">Solo</option>
+            <option value="relevos">Por relevos</option>
+          </select>
         </div>
-
         <div>
-          <label class="block text-gray-700 mb-2">
-            Próximo Mantenimiento
-          </label>
-
+          <label class="block text-gray-700 mb-2">Fecha de registro *</label>
           <input
             type="date"
-            [(ngModel)]="vehicleForm.next_maintenance"
+            [(ngModel)]="vehicleForm.registration_date"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
         </div>
-
-        <div>
-          <label class="block text-gray-700 mb-2">
-            Vencimiento Documentación
-          </label>
-
-          <input
-            type="date"
-            [(ngModel)]="vehicleForm.document_expiry"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-
       </div>
 
     </div>
 
     <div class="p-6 border-t border-gray-200 flex justify-end gap-3">
-
       <button
         type="button"
         (click)="closeModal()"
@@ -295,7 +594,97 @@
       >
         Guardar
       </button>
+    </div>
 
+  </div>
+</div>
+
+<!-- MODAL HISTORIAL -->
+
+<div
+  *ngIf="showNewHistoryForm"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-2xl w-full p-6">
+
+    <h2 class="text-2xl font-bold text-gray-900 mb-6">
+      {{ editingHistory ? 'Editar registro' : 'Nuevo registro de mantenimiento' }}
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div>
+        <label class="block text-gray-700 mb-2">Categoría</label>
+        <select
+          [(ngModel)]="historyForm.category"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        >
+          <option value="mantenimiento_general">Mantenimiento general</option>
+          <option value="accidente">Accidente</option>
+          <option value="liquido_frenos">Líquido de frenos</option>
+          <option value="pastillas">Pastillas</option>
+          <option value="cambio_llantas">Cambio de llantas</option>
+          <option value="disco_embrague_remache">Disco embrague - Remache</option>
+          <option value="disco_embrague_kit">Disco embrague - Cambio de kit</option>
+          <option value="pintura">Pintura</option>
+          <option value="chaperio">Chaperío</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Fecha</label>
+        <input
+          type="date"
+          [(ngModel)]="historyForm.event_date"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Detalle</label>
+        <input
+          type="text"
+          [(ngModel)]="historyForm.detail"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Costo Bs.</label>
+        <input
+          type="number"
+          [(ngModel)]="historyForm.cost"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-gray-700 mb-2">Descripción</label>
+        <textarea
+          rows="4"
+          [(ngModel)]="historyForm.description"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="flex justify-end gap-3 mt-6">
+      <button
+        type="button"
+        (click)="showNewHistoryForm = false"
+        class="px-4 py-2 border border-gray-300 rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        (click)="saveHistory()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Guardar
+      </button>
     </div>
 
   </div>
