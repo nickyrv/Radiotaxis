@@ -33,6 +33,7 @@ type AdminView =
     AlertsManagementComponent,
     TripsManagementComponent,
     PaymentsManagementComponent
+
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']

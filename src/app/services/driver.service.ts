@@ -12,8 +12,15 @@ export interface Driver {
 
   license: string | null;
   license_expiry: string | null;
+  license_category: string | null;
+
+  has_tic: boolean;
 
   address: string | null;
+  address_lat: number | null;
+  address_lng: number | null;
+
+  photo_url: string | null;
 
   status: string;
 
@@ -29,8 +36,15 @@ export interface DriverRequest {
 
   license: string | null;
   license_expiry: string | null;
+  license_category: string | null;
+
+  has_tic: boolean;
 
   address: string | null;
+  address_lat: number | null;
+  address_lng: number | null;
+
+  photo_url: string | null;
 
   status: string;
 
@@ -62,6 +76,21 @@ export class DriverService {
     return this.http.put<Driver>(
       `${this.apiUrl}${id}`,
       driver
+    );
+  }
+
+  uploadDriverPhoto(
+    id: number,
+    file: File
+  ): Observable<Driver> {
+
+    const formData = new FormData();
+
+    formData.append('file', file);
+
+    return this.http.post<Driver>(
+      `${this.apiUrl}${id}/upload-photo`,
+      formData
     );
   }
 

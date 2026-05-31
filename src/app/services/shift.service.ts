@@ -15,6 +15,10 @@ export interface Shift {
   end_time: string;
 
   status: string;
+
+  turn_order: number;
+
+  is_active: number;
 }
 
 export interface ShiftRequest {
@@ -28,6 +32,10 @@ export interface ShiftRequest {
   end_time: string;
 
   status: string;
+
+  turn_order: number;
+
+  is_active: number;
 }
 
 @Injectable({

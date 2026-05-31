@@ -21,6 +21,16 @@ import {
   VehicleHistoryRequest
 } from '../../../../services/vehicle-history.service';
 
+import {
+  ShiftService,
+  Shift
+} from '../../../../services/shift.service';
+
+import {
+  DriverService,
+  Driver
+} from '../../../../services/driver.service';
+
 @Component({
   selector: 'app-vehicles-management',
   standalone: true,
@@ -32,6 +42,8 @@ export class VehiclesManagementComponent implements OnInit {
 
   vehicles: Vehicle[] = [];
   owners: Owner[] = [];
+  shifts: Shift[] = [];
+  drivers: Driver[] = [];
 
   showForm = false;
   showNewHistoryForm = false;
@@ -70,12 +82,16 @@ export class VehiclesManagementComponent implements OnInit {
   constructor(
     private vehicleService: VehicleService,
     private vehicleHistoryService: VehicleHistoryService,
-    private ownerService: OwnerService
+    private ownerService: OwnerService,
+    private shiftService: ShiftService,
+    private driverService: DriverService
   ) {}
 
   ngOnInit() {
     this.loadVehicles();
     this.loadOwners();
+    this.loadShifts();
+    this.loadDrivers();
   }
 
   getEmptyVehicleForm(): VehicleRequest {
@@ -88,6 +104,7 @@ export class VehiclesManagementComponent implements OnInit {
 
       service_type: 'radio_taxi',
       radio_code: '',
+      company_name: '',
 
       status: 'active',
 
@@ -141,6 +158,16 @@ export class VehiclesManagementComponent implements OnInit {
       }
     });
   }
+  loadShifts() {
+    this.shiftService.getShifts().subscribe({
+      next: (data) => {
+        this.shifts = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar turnos:', error);
+      }
+    });
+  }
     loadOwners() {
       this.ownerService.getOwners().subscribe({
         next: (data) => {
@@ -148,6 +175,16 @@ export class VehiclesManagementComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error al cargar propietarios:', error);
+        }
+      });
+    }
+    loadDrivers() {
+      this.driverService.getDrivers().subscribe({
+        next: (data) => {
+          this.drivers = data;
+        },
+        error: (error) => {
+          console.error('Error al cargar conductores:', error);
         }
       });
     }
@@ -162,7 +199,11 @@ export class VehiclesManagementComponent implements OnInit {
       this.getOwnerName(vehicle.owner_id).toLowerCase().includes(term)
     );
   }
-
+  get accidentHistory() {
+    return this.vehicleHistory.filter(history =>
+      (history.category || '').toLowerCase().includes('accidente')
+    );
+  }
   get filteredVehicleHistory() {
     return this.vehicleHistory.filter(history => {
       const search = this.historySearchTerm.toLowerCase();
@@ -256,57 +297,88 @@ export class VehiclesManagementComponent implements OnInit {
   }
 
   saveHistory() {
-    if (!this.historyForm.category) {
-      alert('Debe seleccionar una categoría');
-      return;
-    }
-
-    if (!this.historyForm.event_date) {
-      alert('Debe seleccionar una fecha');
-      return;
-    }
-
-    if (!this.historyForm.detail) {
-      alert('Debe ingresar el detalle del registro');
-      return;
-    }
-
-    if (this.editingHistory) {
-      this.vehicleHistoryService.updateHistory(
-        this.editingHistory.id,
-        this.historyForm
-      ).subscribe({
-        next: () => {
-          this.showNewHistoryForm = false;
-          this.editingHistory = null;
-
-          if (this.selectedVehicle) {
-            this.loadVehicleHistory(this.selectedVehicle.id);
-          }
-        },
-        error: (error) => {
-          console.error('Error al actualizar historial:', error);
-          alert('No se pudo actualizar el registro');
-        }
-      });
-
-    } else {
-      this.vehicleHistoryService.createHistory(this.historyForm).subscribe({
-        next: () => {
-          this.showNewHistoryForm = false;
-
-          if (this.selectedVehicle) {
-            this.loadVehicleHistory(this.selectedVehicle.id);
-          }
-        },
-        error: (error) => {
-          console.error('Error al guardar historial:', error);
-          alert('No se pudo guardar el registro');
-        }
-      });
-    }
+  if (!this.historyForm.category) {
+    alert('Debe seleccionar una categoría');
+    return;
   }
 
+  if (!this.historyForm.event_date) {
+    alert('Debe seleccionar una fecha');
+    return;
+  }
+
+  if (!this.historyForm.detail) {
+    alert('Debe ingresar el detalle del registro');
+    return;
+  }
+
+  const isAccident =
+  (this.historyForm.category || '').toLowerCase().includes('accidente');
+
+if (isAccident) {
+  this.assignDriverByAccidentDate();
+
+  if (!this.historyForm.driver_id) {
+    alert('No se encontró chofer de turno para la fecha del accidente');
+    return;
+  }
+
+  this.historyForm.cost = null;
+}
+
+  if (!isAccident) {
+    const historyCost = Number(this.historyForm.cost);
+
+    if (
+      this.historyForm.cost === null ||
+      isNaN(historyCost) ||
+      historyCost <= 0
+    ) {
+      alert('El costo debe ser mayor a 0 Bs.');
+      return;
+    }
+
+    this.historyForm.cost = historyCost;
+
+  } else {
+    this.historyForm.cost = null;
+  }
+
+  if (this.editingHistory) {
+    this.vehicleHistoryService.updateHistory(
+      this.editingHistory.id,
+      this.historyForm
+    ).subscribe({
+      next: () => {
+        this.showNewHistoryForm = false;
+        this.editingHistory = null;
+
+        if (this.selectedVehicle) {
+          this.loadVehicleHistory(this.selectedVehicle.id);
+        }
+      },
+      error: (error) => {
+        console.error('Error al actualizar historial:', error);
+        alert('No se pudo actualizar el registro');
+      }
+    });
+
+  } else {
+    this.vehicleHistoryService.createHistory(this.historyForm).subscribe({
+      next: () => {
+        this.showNewHistoryForm = false;
+
+        if (this.selectedVehicle) {
+          this.loadVehicleHistory(this.selectedVehicle.id);
+        }
+      },
+      error: (error) => {
+        console.error('Error al guardar historial:', error);
+        alert('No se pudo guardar el registro');
+      }
+    });
+  }
+}
   deleteHistory(id: number) {
     const confirmDelete = confirm('¿Eliminar este registro?');
 
@@ -338,10 +410,15 @@ export class VehiclesManagementComponent implements OnInit {
   }
 
   openNewVehicleForm() {
+
     this.editingVehicle = null;
+
     this.vehicleForm = this.getEmptyVehicleForm();
+
     this.selectedPhotoFile = null;
+
     this.showForm = true;
+
   }
 
   handleEdit(vehicle: Vehicle) {
@@ -352,10 +429,12 @@ export class VehiclesManagementComponent implements OnInit {
       model: vehicle.model,
       year: vehicle.year,
 
-      owner_id: vehicle.owner_id,
-
+      owner_id: vehicle.owner_id && Number(vehicle.owner_id) > 0
+      ? Number(vehicle.owner_id)
+      : null,
       service_type: vehicle.service_type,
       radio_code: vehicle.radio_code,
+      company_name: vehicle.company_name,
 
       status: vehicle.status,
 
@@ -419,16 +498,32 @@ export class VehiclesManagementComponent implements OnInit {
       return false;
     }
 
-    if (!this.vehicleForm.owner_id) {
-      alert('Debe seleccionar un propietario');
+    const ownerId = Number(this.vehicleForm.owner_id);
+
+    const ownerExists = this.owners.some(
+      owner => Number(owner.id) === ownerId
+    );
+
+    if (!ownerId || isNaN(ownerId) || !ownerExists) {
+      alert('Debe seleccionar un propietario registrado');
+      return false;
+    }
+
+    this.vehicleForm.owner_id = ownerId;
+    
+      if (
+      this.vehicleForm.service_type === 'radio_taxi' &&
+      !this.vehicleForm.radio_code
+    ) {
+      alert('El código interno es obligatorio para radio taxi');
       return false;
     }
 
     if (
       this.vehicleForm.service_type === 'radio_taxi' &&
-      !this.vehicleForm.radio_code
+      !this.vehicleForm.company_name
     ) {
-      alert('El código interno es obligatorio para radio taxi');
+      alert('Debe ingresar la empresa de radio taxi');
       return false;
     }
 
@@ -652,5 +747,120 @@ export class VehiclesManagementComponent implements OnInit {
       default:
         return category;
     }
+  }
+assignDriverByAccidentDate() {
+  if (!this.selectedVehicle || !this.historyForm.event_date) {
+    return;
+  }
+
+  const accidentDate = this.historyForm.event_date;
+
+  const shiftFound = this.shifts.find(shift => {
+    if (
+      Number(shift.vehicle_id) !== Number(this.selectedVehicle?.id) ||
+      Number(shift.is_active) !== 1
+    ) {
+      return false;
+    }
+
+    const shiftStartDate = shift.start_time.split('T')[0];
+    const shiftEndDate = shift.end_time.split('T')[0];
+
+    return accidentDate >= shiftStartDate && accidentDate <= shiftEndDate;
+  });
+
+  if (shiftFound?.driver_id) {
+    this.historyForm.driver_id = Number(shiftFound.driver_id);
+    return;
+  }
+
+  const todayDriverId = this.getTodayDriverId(this.selectedVehicle);
+
+  if (todayDriverId) {
+    this.historyForm.driver_id = Number(todayDriverId);
+    return;
+  }
+
+  this.historyForm.driver_id = this.selectedVehicle.current_driver_id || null;
+}
+
+  getVehicleAssignedDrivers(vehicleId: number): number[] {
+    const shiftDriverIds = this.shifts
+      .filter(shift =>
+        Number(shift.vehicle_id) === Number(vehicleId) &&
+        shift.driver_id !== null &&
+        shift.driver_id !== undefined &&
+        Number(shift.is_active) === 1
+      )
+      .map(shift => Number(shift.driver_id));
+
+    const directDriverIds = this.drivers
+      .filter(driver =>
+        Number(driver.vehicle_id) === Number(vehicleId) &&
+        driver.status !== 'inactive'
+      )
+      .map(driver => Number(driver.id));
+
+    return [...new Set([...shiftDriverIds, ...directDriverIds])];
+  }
+
+  get selectedVehicleDriverHistory() {
+    if (!this.selectedVehicle) {
+      return [];
+    }
+
+    return this.shifts
+      .filter(shift =>
+        Number(shift.vehicle_id) === Number(this.selectedVehicle?.id) &&
+        shift.driver_id !== null
+      )
+      .sort((a, b) =>
+        new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+      );
+  }
+
+  getTodayDriverId(vehicle: Vehicle): number | null {
+    const assignedDrivers = this.getVehicleAssignedDrivers(vehicle.id);
+
+    if (assignedDrivers.length === 0) {
+      return vehicle.current_driver_id || null;
+    }
+
+    if (vehicle.management_type === 'solo') {
+      return assignedDrivers[0];
+    }
+
+    const activeShifts = this.shifts
+      .filter(shift =>
+        Number(shift.vehicle_id) === Number(vehicle.id) &&
+        shift.driver_id !== null &&
+        shift.driver_id !== undefined &&
+        Number(shift.is_active) === 1
+      )
+      .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
+
+    const firstShiftDate = activeShifts[0].start_time.split('T')[0];
+
+    const start = new Date(firstShiftDate + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor(
+      (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    const index = Math.abs(diffDays) % assignedDrivers.length;
+
+    return assignedDrivers[index];
+  }
+
+  getDriverNameById(driverId: number | null): string {
+    if (!driverId) {
+      return 'Sin chofer';
+    }
+
+    const driver = this.drivers.find(driver => driver.id === driverId);
+
+    return driver ? driver.name : `Chofer ID ${driverId}`;
   }
 }

@@ -12,6 +12,7 @@ export interface Vehicle {
 
   service_type: string;
   radio_code: string | null;
+  company_name: string | null;
 
   status: string;
 
@@ -30,6 +31,7 @@ export interface Vehicle {
 
   current_driver_id: number | null;
   admin_id: number | null;
+  
 }
 
 export interface VehicleRequest {
@@ -41,7 +43,8 @@ export interface VehicleRequest {
 
   service_type: string;
   radio_code: string | null;
-
+  company_name: string | null;
+  
   status: string;
 
   last_maintenance: string | null;

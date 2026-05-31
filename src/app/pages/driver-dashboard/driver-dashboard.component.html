@@ -226,56 +226,46 @@
       </div>
     </div>
 
-    <!-- INCIDENTES REPORTADOS -->
+    <!-- REPORTES DEL CONDUCTOR -->
+<div
+  *ngIf="driverIncidents.length > 0"
+  class="bg-white rounded-lg border border-gray-200 p-4"
+>
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">
+    Reportes Realizados
+  </h3>
+
+  <div class="space-y-2">
     <div
-      *ngIf="driverIncidents.length > 0"
-      class="bg-white rounded-lg border border-gray-200 p-4"
+      *ngFor="let incident of driverIncidents"
+      class="p-3 bg-gray-50 rounded-lg"
     >
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">
-        Incidentes Reportados
-      </h3>
+      <div class="flex items-start justify-between mb-2">
 
-      <div class="space-y-2">
-        <div
-          *ngFor="let incident of driverIncidents"
-          class="p-3 bg-gray-50 rounded-lg"
-        >
-          <div class="flex items-start justify-between mb-2">
-            <div class="text-gray-900 text-sm">
-              {{
-                incident.type === 'failure'
-                  ? 'Falla mecánica'
-                  : incident.type === 'accident'
-                  ? 'Accidente'
-                  : 'Otro'
-              }}
-            </div>
-
-            <span
-              class="text-xs px-2 py-1 rounded-full"
-              [ngClass]="{
-                'bg-yellow-100 text-yellow-700': incident.status === 'pending',
-                'bg-green-100 text-green-700': incident.status !== 'pending'
-              }"
-            >
-              {{
-                incident.status === 'pending'
-                  ? 'Pendiente'
-                  : 'Resuelto'
-              }}
-            </span>
-          </div>
-
-          <div class="text-gray-600 text-sm mb-1">
-            {{ incident.description }}
-          </div>
-
-          <div class="text-gray-500 text-sm">
-            {{ formatDate(incident.incident_date) }}
-          </div>
+        <div class="text-gray-900 text-sm font-medium">
+          {{ incident.category }}
         </div>
+
+        <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+          Registrado
+        </span>
+
+      </div>
+
+      <div class="text-gray-700 text-sm mb-1">
+        {{ incident.detail || 'Reporte del conductor' }}
+      </div>
+
+      <div class="text-gray-600 text-sm mb-1">
+        {{ incident.description || 'Sin descripción' }}
+      </div>
+
+      <div class="text-gray-500 text-sm">
+        {{ formatDate(incident.event_date) }}
       </div>
     </div>
+  </div>
+</div>
 
     <!-- MODAL REGISTRAR PAGO -->
     <div

@@ -4,22 +4,34 @@ import { Observable } from 'rxjs';
 
 export interface Owner {
   id: number;
+
   name: string;
   ci: string | null;
   phone: string | null;
   email: string | null;
+
   address: string | null;
+  address_lat: number | null;
+  address_lng: number | null;
+
   status: string;
+
   join_date: string | null;
 }
 
 export interface OwnerRequest {
+
   name: string;
   ci: string | null;
   phone: string | null;
   email: string | null;
+
   address: string | null;
+  address_lat: number | null;
+  address_lng: number | null;
+
   status: string;
+
   join_date: string | null;
 }
 

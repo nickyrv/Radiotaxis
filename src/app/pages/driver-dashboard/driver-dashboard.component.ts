@@ -24,10 +24,10 @@ import {
 } from '../../services/driver.service';
 
 import {
-  IncidentService,
-  Incident,
-  IncidentRequest
-} from '../../services/incident.service';
+  VehicleHistoryService,
+  VehicleHistory,
+  VehicleHistoryRequest
+} from '../../services/vehicle-history.service';
 
 @Component({
   selector: 'app-driver-dashboard',
@@ -39,6 +39,8 @@ import {
 export class DriverDashboardComponent implements OnInit {
 
   showPaymentForm = false;
+
+  // Se mantiene con nombres "incident" porque tu HTML todavía los usa
   showIncidentForm = false;
 
   paymentType: 'daily' | 'weekly' = 'daily';
@@ -55,7 +57,9 @@ export class DriverDashboardComponent implements OnInit {
 
   driverPayments: Payment[] = [];
   driverShifts: Shift[] = [];
-  driverIncidents: Incident[] = [];
+
+  // Ahora los incidentes vienen desde vehicle_history
+  driverIncidents: VehicleHistory[] = [];
 
   paymentForm: PaymentRequest = {
     driver_id: this.user.id,
@@ -69,13 +73,14 @@ export class DriverDashboardComponent implements OnInit {
     observations: ''
   };
 
-  incidentForm: IncidentRequest = {
-    driver_id: this.user.id,
+  incidentForm: VehicleHistoryRequest = {
     vehicle_id: this.user.vehicleId,
-    type: 'failure',
-    description: '',
-    incident_date: '',
-    status: 'pending'
+    driver_id: this.user.id,
+    category: 'Falla reportada',
+    detail: '',
+    event_date: '',
+    cost: null,
+    description: ''
   };
 
   constructor(
@@ -83,7 +88,7 @@ export class DriverDashboardComponent implements OnInit {
     private shiftService: ShiftService,
     private vehicleService: VehicleService,
     private driverService: DriverService,
-    private incidentService: IncidentService
+    private vehicleHistoryService: VehicleHistoryService
   ) {}
 
   ngOnInit() {
@@ -91,58 +96,72 @@ export class DriverDashboardComponent implements OnInit {
     this.loadPayments();
     this.loadShifts();
     this.loadVehicle();
-    this.loadIncidents();
+    this.loadVehicleHistory();
   }
 
   loadDriverData() {
     this.driverService.getDrivers().subscribe({
-      next: (drivers) => {
+      next: (drivers: Driver[]) => {
         this.driverInfo =
           drivers.find(d => d.id === this.user.id) || null;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar conductor:', error);
       }
     });
   }
 
   loadVehicle() {
     this.vehicleService.getVehicles().subscribe({
-      next: (vehicles) => {
+      next: (vehicles: Vehicle[]) => {
         this.vehicle =
           vehicles.find(v => v.id === this.user.vehicleId) || null;
+      },
+      error: (error: any) => {
+        console.error('Error al cargar vehículo:', error);
       }
     });
   }
 
   loadPayments() {
     this.paymentService.getPayments().subscribe({
-      next: (payments) => {
+      next: (payments: Payment[]) => {
         this.driverPayments = payments.filter(
           p => p.driver_id === this.user.id
         );
+      },
+      error: (error: any) => {
+        console.error('Error al cargar pagos:', error);
       }
     });
   }
 
   loadShifts() {
     this.shiftService.getShifts().subscribe({
-      next: (shifts) => {
+      next: (shifts: Shift[]) => {
         this.driverShifts = shifts.filter(
           s => s.driver_id === this.user.id
         );
+      },
+      error: (error: any) => {
+        console.error('Error al cargar turnos:', error);
       }
     });
   }
 
-  loadIncidents() {
-    this.incidentService.getIncidents().subscribe({
-      next: (incidents) => {
-        this.driverIncidents = incidents.filter(
-          i => i.driver_id === this.user.id
-        );
-      },
-      error: (error) => {
-        console.error('Error al cargar incidentes:', error);
-      }
-    });
+  loadVehicleHistory() {
+    this.vehicleHistoryService
+      .getVehicleHistory(this.user.vehicleId)
+      .subscribe({
+        next: (history: VehicleHistory[]) => {
+          this.driverIncidents = history.filter(
+            item => item.driver_id === this.user.id
+          );
+        },
+        error: (error: any) => {
+          console.error('Error al cargar reportes:', error);
+        }
+      });
   }
 
   openPaymentForm() {
@@ -177,7 +196,7 @@ export class DriverDashboardComponent implements OnInit {
         this.showPaymentForm = false;
         this.loadPayments();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al registrar pago:', error);
         alert('No se pudo registrar el pago');
       }
@@ -199,26 +218,52 @@ export class DriverDashboardComponent implements OnInit {
     this.incidentType = 'failure';
 
     this.incidentForm = {
-      driver_id: this.user.id,
       vehicle_id: this.user.vehicleId,
-      type: 'failure',
-      description: '',
-      incident_date: today,
-      status: 'pending'
+      driver_id: this.user.id,
+      category: 'Falla reportada',
+      detail: '',
+      event_date: today,
+      cost: null,
+      description: ''
     };
 
     this.showIncidentForm = true;
   }
 
   saveIncident() {
-    this.incidentForm.type = this.incidentType;
+    if (!this.incidentForm.description) {
+      alert('Debe ingresar una descripción');
+      return;
+    }
 
-    this.incidentService.createIncident(this.incidentForm).subscribe({
+    if (!this.incidentForm.event_date) {
+      alert('Debe seleccionar una fecha');
+      return;
+    }
+
+    if (this.incidentType === 'failure') {
+      this.incidentForm.category = 'Falla reportada';
+      this.incidentForm.detail = 'Falla reportada por conductor';
+    }
+
+    if (this.incidentType === 'accident') {
+      this.incidentForm.category = 'Accidente';
+      this.incidentForm.detail = 'Accidente reportado por conductor';
+    }
+
+    if (this.incidentType === 'other') {
+      this.incidentForm.category = 'Otro reporte';
+      this.incidentForm.detail = 'Reporte del conductor';
+    }
+
+    this.incidentForm.cost = null;
+
+    this.vehicleHistoryService.createHistory(this.incidentForm).subscribe({
       next: () => {
         this.showIncidentForm = false;
-        this.loadIncidents();
+        this.loadVehicleHistory();
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al reportar incidente:', error);
         alert('No se pudo reportar el incidente');
       }

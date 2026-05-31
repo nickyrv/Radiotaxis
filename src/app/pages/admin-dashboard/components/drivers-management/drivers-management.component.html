@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" *ngIf="!selectedDriver">
 
   <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -14,6 +14,7 @@
     </div>
 
     <button
+      type="button"
       (click)="openNewDriverForm()"
       class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
     >
@@ -27,7 +28,7 @@
 
     <input
       type="text"
-      placeholder="Buscar conductor..."
+      placeholder="Buscar conductor por nombre, CI, licencia o teléfono..."
       [(ngModel)]="searchTerm"
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
     />
@@ -44,8 +45,11 @@
         <thead class="bg-gray-50 border-b border-gray-200">
 
           <tr>
+            <th class="px-6 py-3 text-left text-gray-700">Foto</th>
             <th class="px-6 py-3 text-left text-gray-700">Nombre</th>
             <th class="px-6 py-3 text-left text-gray-700">Licencia</th>
+            <th class="px-6 py-3 text-left text-gray-700">Categoría</th>
+            <th class="px-6 py-3 text-left text-gray-700">TIC</th>
             <th class="px-6 py-3 text-left text-gray-700">Teléfono</th>
             <th class="px-6 py-3 text-left text-gray-700">Vehículo</th>
             <th class="px-6 py-3 text-left text-gray-700">Estado</th>
@@ -57,17 +61,49 @@
 
         <tbody class="divide-y divide-gray-200">
 
-          <tr
-            *ngFor="let driver of filteredDrivers"
-            class="hover:bg-gray-50"
-          >
+         <tr
+          *ngFor="let driver of filteredDrivers"
+          (click)="selectDriver(driver)"
+          class="hover:bg-gray-50 cursor-pointer"
+        >
 
-            <td class="px-6 py-4 text-gray-900">
+            <td class="px-6 py-4">
+              <img
+                *ngIf="driver.photo_url"
+                [src]="driver.photo_url"
+                class="w-14 h-14 rounded-full object-cover border"
+              />
+
+              <div
+                *ngIf="!driver.photo_url"
+                class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-400 border"
+              >
+                Sin foto
+              </div>
+            </td>
+
+            <td class="px-6 py-4 text-gray-900 font-medium">
               {{ driver.name }}
             </td>
 
             <td class="px-6 py-4 text-gray-700">
               {{ driver.license || 'Sin licencia' }}
+            </td>
+
+            <td class="px-6 py-4 text-gray-700">
+              {{ driver.license_category || 'Sin categoría' }}
+            </td>
+
+            <td class="px-6 py-4">
+              <span
+                class="px-2 py-1 rounded-full text-sm"
+                [ngClass]="{
+                  'bg-green-100 text-green-700': driver.has_tic,
+                  'bg-gray-100 text-gray-700': !driver.has_tic
+                }"
+              >
+                {{ driver.has_tic ? 'Sí' : 'No' }}
+              </span>
             </td>
 
             <td class="px-6 py-4 text-gray-700">
@@ -97,10 +133,11 @@
 
             <td class="px-6 py-4">
 
-              <div class="flex gap-2">
+              <div class="flex flex-wrap gap-2">
 
                 <button
-                  (click)="handleToggleBlock(driver)"
+                  type="button"
+                  (click)="handleToggleBlock(driver); $event.stopPropagation()"
                   class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
                 >
                   {{
@@ -111,14 +148,16 @@
                 </button>
 
                 <button
-                  (click)="handleEdit(driver)"
+                  type="button"
+                  (click)="handleEdit(driver); $event.stopPropagation()"
                   class="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Editar
                 </button>
 
                 <button
-                  (click)="handleDelete(driver.id)"
+                  type="button"
+                  (click)="handleDelete(driver.id); $event.stopPropagation()"
                   class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700"
                 >
                   Eliminar
@@ -140,13 +179,333 @@
 
 </div>
 
+<div *ngIf="selectedDriver" class="space-y-6">
+
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+
+    <div class="flex items-center gap-4">
+      <button
+        type="button"
+        (click)="backToList()"
+        class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+      >
+        ← Volver
+      </button>
+
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ selectedDriver.name }}
+        </h1>
+
+        <p class="text-gray-600">
+          CI: {{ selectedDriver.ci || 'Sin CI' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        (click)="handleEdit(selectedDriver)"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Editar conductor
+      </button>
+
+      <button
+        type="button"
+        (click)="handleToggleBlock(selectedDriver)"
+        class="px-4 py-2 bg-yellow-500 text-white rounded-lg"
+      >
+        {{ selectedDriver.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }}
+      </button>
+
+      <button
+        type="button"
+        (click)="handleDelete(selectedDriver.id)"
+        class="px-4 py-2 bg-red-600 text-white rounded-lg"
+      >
+        Eliminar
+      </button>
+    </div>
+
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div class="h-72 bg-gray-100">
+        <img
+          *ngIf="selectedDriver.photo_url"
+          [src]="selectedDriver.photo_url"
+          class="w-full h-full object-cover"
+        />
+
+        <div
+          *ngIf="!selectedDriver.photo_url"
+          class="w-full h-full flex items-center justify-center text-gray-400"
+        >
+          Sin foto
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">
+        Información del conductor
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+          <p class="text-sm text-gray-500">Nombre completo</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.name }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">CI</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.ci || 'Sin CI' }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Teléfono</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.phone || 'Sin teléfono' }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Correo</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.email || 'Sin correo' }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Licencia</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.license || 'Sin licencia' }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Categoría de licencia</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.license_category || 'Sin categoría' }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Vencimiento licencia</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.license_expiry || 'Sin fecha' }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">TIC</p>
+          <span
+            class="inline-block mt-1 px-2 py-1 rounded-full text-sm"
+            [ngClass]="{
+              'bg-green-100 text-green-700': selectedDriver.has_tic,
+              'bg-gray-100 text-gray-700': !selectedDriver.has_tic
+            }"
+          >
+            {{ selectedDriver.has_tic ? 'Sí tiene TIC' : 'No tiene TIC' }}
+          </span>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Vehículo asignado</p>
+          <p class="text-gray-900 font-medium">
+            {{ getVehiclePlate(selectedDriver.vehicle_id) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Estado</p>
+          <span
+            class="inline-block mt-1 px-2 py-1 rounded-full text-sm"
+            [ngClass]="getStatusColor(selectedDriver.status)"
+          >
+            {{ getStatusLabel(selectedDriver.status) }}
+          </span>
+        </div>
+
+        <div class="md:col-span-2">
+          <p class="text-sm text-gray-500">Dirección</p>
+
+          <p class="text-gray-900 font-medium">
+            {{ selectedDriver.address || 'Sin dirección' }}
+          </p>
+
+          <button
+            type="button"
+            (click)="openDriverLocation(selectedDriver)"
+            class="mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+          >
+            Ver en Google Maps
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+
+    <h2 class="text-xl font-semibold text-gray-900">
+      Historial de pagos
+    </h2>
+
+    <div class="flex flex-wrap gap-3">
+
+      <select
+        [(ngModel)]="paymentVehicleFilter"
+        class="px-4 py-2 border border-gray-300 rounded-lg"
+      >
+        <option value="">
+          Todos los vehículos
+        </option>
+
+        <option
+          *ngFor="let vehicle of vehicles"
+          [value]="vehicle.id"
+        >
+          {{ vehicle.plate }}
+        </option>
+      </select>
+
+      <input
+        type="date"
+        [(ngModel)]="paymentStartDate"
+        class="px-4 py-2 border border-gray-300 rounded-lg"
+      />
+
+      <input
+        type="date"
+        [(ngModel)]="paymentEndDate"
+        class="px-4 py-2 border border-gray-300 rounded-lg"
+      />
+
+    </div>
+
+  </div>
+
+  <div class="overflow-x-auto">
+
+    <table class="w-full">
+
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-3 text-left">Fecha</th>
+          <th class="px-4 py-3 text-left">Vehículo</th>
+          <th class="px-4 py-3 text-left">Concepto</th>
+          <th class="px-4 py-3 text-left">Monto</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+        <tr
+          *ngFor="let payment of driverPayments"
+          class="border-t"
+        >
+          <td class="px-4 py-3">
+            {{ payment.payment_date }}
+          </td>
+
+          <td class="px-4 py-3">
+            {{ getVehiclePlate(payment.vehicle_id) }}
+          </td>
+
+          <td class="px-4 py-3">
+            {{ payment.concept }}
+          </td>
+
+          <td class="px-4 py-3 font-semibold">
+            Bs. {{ payment.amount }}
+          </td>
+        </tr>
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</div>
+
+<div class="bg-white rounded-xl border border-gray-200 p-6">
+
+  <h2 class="text-xl font-semibold text-gray-900 mb-6">
+    Resumen de accidentes
+  </h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+      <p class="text-sm text-red-600">
+        Accidentes registrados
+      </p>
+
+      <p class="text-3xl font-bold text-red-700">
+        {{ driverAccidents.length }}
+      </p>
+    </div>
+
+  </div>
+
+  <div class="space-y-3">
+
+    <div
+      *ngFor="let accident of driverAccidents"
+      class="p-4 border border-red-200 bg-red-50 rounded-lg"
+    >
+
+      <div class="flex justify-between items-start gap-4">
+
+        <div>
+          <p class="font-semibold text-red-800">
+            {{ accident.detail }}
+          </p>
+
+          <p class="text-sm text-red-600">
+            {{ accident.description }}
+          </p>
+        </div>
+
+        <div class="text-right">
+          <p class="text-sm text-gray-600">
+            {{ accident.event_date }}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+  </div>
+
+</div>
+
 <!-- Modal -->
 <div
   *ngIf="showForm"
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
 >
 
-  <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+  <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
 
     <div class="p-6 border-b border-gray-200">
 
@@ -161,6 +520,43 @@
     </div>
 
     <div class="p-6 space-y-4">
+
+      <!-- FOTO -->
+      <div class="flex flex-col sm:flex-row gap-4 items-start">
+
+        <div>
+          <img
+            *ngIf="driverForm.photo_url"
+            [src]="driverForm.photo_url"
+            class="w-32 h-32 object-cover rounded-full border"
+          />
+
+          <div
+            *ngIf="!driverForm.photo_url"
+            class="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 border"
+          >
+            Sin foto
+          </div>
+        </div>
+
+        <div class="flex-1">
+          <label class="block text-gray-700 mb-2">
+            Foto del conductor
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            (change)="onPhotoSelected($event)"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+
+          <p class="text-xs text-gray-500 mt-1">
+            Puede cargar una foto tomada en el momento o seleccionada desde el equipo.
+          </p>
+        </div>
+
+      </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -179,7 +575,7 @@
 
         <div>
           <label class="block text-gray-700 mb-2">
-            CI
+            CI *
           </label>
 
           <input
@@ -192,7 +588,7 @@
 
         <div>
           <label class="block text-gray-700 mb-2">
-            Licencia
+            Licencia *
           </label>
 
           <input
@@ -205,7 +601,23 @@
 
         <div>
           <label class="block text-gray-700 mb-2">
-            Vencimiento Licencia
+            Categoría de licencia *
+          </label>
+
+          <select
+            [(ngModel)]="driverForm.license_category"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="">Seleccione categoría...</option>
+            <option value="A">Categoría A</option>
+            <option value="B">Categoría B</option>
+            <option value="C">Categoría C</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Vencimiento Licencia *
           </label>
 
           <input
@@ -217,7 +629,21 @@
 
         <div>
           <label class="block text-gray-700 mb-2">
-            Teléfono
+            TIC *
+          </label>
+
+          <select
+            [(ngModel)]="driverForm.has_tic"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option [ngValue]="true">Sí tiene TIC</option>
+            <option [ngValue]="false">No tiene TIC</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">
+            Teléfono *
           </label>
 
           <input
@@ -230,7 +656,7 @@
 
         <div>
           <label class="block text-gray-700 mb-2">
-            Correo electrónico
+            Correo electrónico *
           </label>
 
           <input
@@ -243,15 +669,42 @@
 
         <div class="md:col-span-2">
           <label class="block text-gray-700 mb-2">
-            Dirección
+            Dirección *
           </label>
 
           <input
             type="text"
             placeholder="Dirección"
             [(ngModel)]="driverForm.address"
+            (change)="searchAddressOnMap()"
             class="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
+          <div class="mt-4">
+
+            <label class="block text-gray-700 mb-2">
+              Seleccionar ubicación en mapa
+            </label>
+
+            <google-map
+              height="300px"
+              width="100%"
+              [center]="mapCenter"
+              [zoom]="mapZoom"
+              (mapClick)="selectLocation($event)"
+            >
+
+              <map-marker
+                *ngIf="driverForm.address_lat && driverForm.address_lng"
+                [position]="{
+                  lat: driverForm.address_lat,
+                  lng: driverForm.address_lng
+                }"
+              >
+              </map-marker>
+
+            </google-map>
+
+          </div>
         </div>
 
         <div>
@@ -268,13 +721,17 @@
             </option>
 
             <option
-              *ngFor="let vehicle of vehicles"
+              *ngFor="let vehicle of availableVehicles"
               [ngValue]="vehicle.id"
             >
               {{ vehicle.plate }} - {{ vehicle.model }}
             </option>
 
           </select>
+
+          <p class="text-xs text-gray-500 mt-1">
+            Solo aparecen vehículos que no están dados de baja.
+          </p>
         </div>
 
         <div>

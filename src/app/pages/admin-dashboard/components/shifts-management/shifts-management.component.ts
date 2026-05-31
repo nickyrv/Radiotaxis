@@ -39,13 +39,15 @@ export class ShiftsManagementComponent implements OnInit {
 
   editingShift: Shift | null = null;
 
-  shiftForm: ShiftRequest = {
-    driver_id: null,
-    vehicle_id: null,
-    start_time: '',
-    end_time: '',
-    status: 'scheduled'
-  };
+shiftForm: ShiftRequest = {
+  driver_id: null,
+  vehicle_id: null,
+  start_time: '',
+  end_time: '',
+  status: 'scheduled',
+  turn_order: 1,
+  is_active: 1
+}
 
   constructor(
     private shiftService: ShiftService,
@@ -126,7 +128,9 @@ export class ShiftsManagementComponent implements OnInit {
       vehicle_id: null,
       start_time: '',
       end_time: '',
-      status: 'scheduled'
+      status: 'scheduled',
+      turn_order: 1,
+      is_active: 1
     };
 
     this.showForm = true;
@@ -140,7 +144,9 @@ export class ShiftsManagementComponent implements OnInit {
       vehicle_id: shift.vehicle_id,
       start_time: shift.start_time,
       end_time: shift.end_time,
-      status: shift.status
+      status: shift.status,
+      turn_order: 1,
+      is_active: 1
     };
 
     this.showForm = true;

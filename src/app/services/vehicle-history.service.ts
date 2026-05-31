@@ -43,9 +43,18 @@ export class VehicleHistoryService {
     private http: HttpClient
   ) {}
 
-  getVehicleHistory(vehicleId: number): Observable<VehicleHistory[]> {
+  getVehicleHistory(
+    vehicleId: number
+  ): Observable<VehicleHistory[]> {
+
     return this.http.get<VehicleHistory[]>(
       `${this.apiUrl}vehicle/${vehicleId}`
+    );
+  }
+
+  getAllHistory(): Observable<VehicleHistory[]> {
+    return this.http.get<VehicleHistory[]>(
+      this.apiUrl
     );
   }
 
