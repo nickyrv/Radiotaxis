@@ -182,6 +182,7 @@ export class VehiclesManagementComponent implements OnInit {
       this.driverService.getDrivers().subscribe({
         next: (data) => {
           this.drivers = data;
+          console.log('Conductores en vehículos:', this.drivers);
         },
         error: (error) => {
           console.error('Error al cargar conductores:', error);
@@ -479,6 +480,8 @@ if (isAccident) {
   }
 
   validateVehicleForm(): boolean {
+
+
     const plateRegex = /^\d{3,4}\s[A-Z]{3}$/;
 
     this.vehicleForm.plate = this.vehicleForm.plate.trim().toUpperCase();
@@ -497,7 +500,10 @@ if (isAccident) {
       alert('Debe ingresar el año del vehículo');
       return false;
     }
-
+    if (!this.vehicleForm.photo_url && !this.selectedPhotoFile) {
+      alert('Debe subir una foto del vehículo');
+      return false;
+    }
     const ownerId = Number(this.vehicleForm.owner_id);
 
     const ownerExists = this.owners.some(
@@ -510,14 +516,27 @@ if (isAccident) {
     }
 
     this.vehicleForm.owner_id = ownerId;
-    
-      if (
-      this.vehicleForm.service_type === 'radio_taxi' &&
-      !this.vehicleForm.radio_code
+
+    const selectedOwner = this.owners.find(
+      owner => Number(owner.id) === Number(this.vehicleForm.owner_id)
+    );
+
+    if (
+      selectedOwner?.join_date &&
+      this.vehicleForm.registration_date &&
+      this.vehicleForm.registration_date < selectedOwner.join_date
     ) {
-      alert('El código interno es obligatorio para radio taxi');
+      alert('La fecha de registro del vehículo no puede ser anterior a la fecha de registro del propietario');
       return false;
     }
+    
+    if (
+      this.vehicleForm.service_type === 'radio_taxi' &&
+      !this.vehicleForm.radio_code)
+      {
+        alert('El código interno es obligatorio para radio taxi');
+      return false;
+      }
 
     if (
       this.vehicleForm.service_type === 'radio_taxi' &&
@@ -552,6 +571,15 @@ if (isAccident) {
       return false;
     }
 
+    const today = new Date()
+      .toISOString()
+      .split('T')[0];
+
+    if (this.vehicleForm.registration_date > today) {
+      alert('La fecha de registro del vehículo no puede ser futura');
+      return false;
+    }
+
     if (this.vehicleForm.service_type === 'taxi') {
       this.vehicleForm.radio_code = null;
     }
@@ -563,6 +591,8 @@ if (isAccident) {
     if (!this.validateVehicleForm()) {
       return;
     }
+
+    
 
     const payload: VehicleRequest = {
       ...this.vehicleForm,
@@ -596,6 +626,55 @@ if (isAccident) {
         }
       });
     }
+  }
+
+  getAssignedDriversForVehicle(vehicleId: number): Driver[] {
+    const directDrivers = this.drivers.filter(driver =>
+      Number(driver.vehicle_id) === Number(vehicleId) &&
+      driver.status !== 'inactive'
+    );
+
+    const shiftDrivers = this.shifts
+      .filter(shift =>
+        Number(shift.vehicle_id) === Number(vehicleId) &&
+        Number(shift.is_active) === 1 &&
+        shift.driver_id !== null
+      )
+      .map(shift =>
+        this.drivers.find(driver => Number(driver.id) === Number(shift.driver_id))
+      )
+      .filter((driver): driver is Driver => !!driver);
+
+    const allDrivers = [...directDrivers, ...shiftDrivers];
+
+    return allDrivers.filter(
+      (driver, index, array) =>
+        array.findIndex(item => Number(item.id) === Number(driver.id)) === index
+    );
+  }
+
+  getAssignedDriversStatus(vehicle: Vehicle): string {
+    const assignedDrivers = this.getAssignedDriversForVehicle(vehicle.id);
+
+    if (vehicle.management_type === 'solo') {
+      return assignedDrivers.length >= 1
+        ? 'Asignación completa'
+        : 'Sin conductor asignado';
+    }
+
+    if (vehicle.management_type === 'relevos') {
+      if (assignedDrivers.length === 0) {
+        return 'Sin conductores asignados';
+      }
+
+      if (assignedDrivers.length === 1) {
+        return 'Falta conductor de relevo';
+      }
+
+      return 'Asignación completa';
+    }
+
+    return 'Sin información';
   }
 
   uploadPhotoAfterSave(vehicleId: number) {
@@ -804,6 +883,7 @@ assignDriverByAccidentDate() {
     return [...new Set([...shiftDriverIds, ...directDriverIds])];
   }
 
+  
   get selectedVehicleDriverHistory() {
     if (!this.selectedVehicle) {
       return [];
@@ -820,16 +900,6 @@ assignDriverByAccidentDate() {
   }
 
   getTodayDriverId(vehicle: Vehicle): number | null {
-    const assignedDrivers = this.getVehicleAssignedDrivers(vehicle.id);
-
-    if (assignedDrivers.length === 0) {
-      return vehicle.current_driver_id || null;
-    }
-
-    if (vehicle.management_type === 'solo') {
-      return assignedDrivers[0];
-    }
-
     const activeShifts = this.shifts
       .filter(shift =>
         Number(shift.vehicle_id) === Number(vehicle.id) &&
@@ -839,19 +909,81 @@ assignDriverByAccidentDate() {
       )
       .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
 
+    if (activeShifts.length === 0) {
+      if (vehicle.management_type === 'relevos') {
+        return null;
+      }
+
+      const directDriver = this.drivers.find(driver =>
+        Number(driver.vehicle_id) === Number(vehicle.id) &&
+        driver.status !== 'inactive'
+      );
+
+      return directDriver?.id || vehicle.current_driver_id || null;
+    }
+
+    if (vehicle.management_type === 'solo') {
+      return activeShifts[0].driver_id;
+    }
+
     const firstShiftDate = activeShifts[0].start_time.split('T')[0];
 
     const start = new Date(firstShiftDate + 'T00:00:00');
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const diffDays = Math.floor(
-      (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+      (today.getTime() - start.getTime()) /
+      (1000 * 60 * 60 * 24)
     );
 
-    const index = Math.abs(diffDays) % assignedDrivers.length;
+    const index = Math.abs(diffDays) % activeShifts.length;
 
-    return assignedDrivers[index];
+    return activeShifts[index]?.driver_id || null;
+  }
+
+  getRestrictionDayFromPlate(plate: string): string {
+    const numbers = (plate || '').match(/\d/g);
+
+    if (!numbers || numbers.length === 0) {
+      return '';
+    }
+
+    const lastDigit = numbers[numbers.length - 1];
+
+    switch (lastDigit) {
+      case '1':
+      case '2':
+        return 'Lunes';
+
+      case '3':
+      case '4':
+        return 'Martes';
+
+      case '5':
+      case '6':
+        return 'Miércoles';
+
+      case '7':
+      case '8':
+        return 'Jueves';
+
+      case '9':
+      case '0':
+        return 'Viernes';
+
+      default:
+        return '';
+    }
+  }
+
+  onPlateChange() {
+    this.vehicleForm.plate =
+      (this.vehicleForm.plate || '').toUpperCase();
+
+    this.vehicleForm.restriction_day =
+      this.getRestrictionDayFromPlate(this.vehicleForm.plate);
   }
 
   getDriverNameById(driverId: number | null): string {

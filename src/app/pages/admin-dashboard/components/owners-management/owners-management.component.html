@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-6" *ngIf="!selectedOwner">
 
   <div class="flex justify-between items-center">
     <div>
@@ -32,7 +32,8 @@
 
     <div
       *ngFor="let owner of filteredOwners"
-      class="bg-white border rounded-lg p-6"
+      (click)="selectOwner(owner)"
+      class="bg-white border rounded-lg p-6 cursor-pointer hover:shadow-lg transition-all"
     >
       <h3 class="text-xl font-semibold text-gray-900">
         {{ owner.name }}
@@ -68,14 +69,14 @@
       <div class="flex gap-2 mt-4">
 
         <button
-          (click)="handleEdit(owner)"
+          (click)="handleDelete(owner.id); $event.stopPropagation()"
           class="flex-1 bg-yellow-500 text-white py-2 rounded-lg"
         >
           Editar
         </button>
 
         <button
-          (click)="handleDelete(owner.id)"
+          (click)="handleDelete(owner.id); $event.stopPropagation()"
           class="flex-1 bg-red-600 text-white py-2 rounded-lg"
         >
           Eliminar
@@ -84,6 +85,185 @@
       </div>
 
     </div>
+
+  </div>
+
+</div>
+
+<div *ngIf="selectedOwner" class="space-y-6">
+
+  <div class="flex items-center justify-between gap-4">
+
+    <div class="flex items-center gap-4">
+      <button
+        type="button"
+        (click)="backToList()"
+        class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+      >
+        ← Volver
+      </button>
+
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+          {{ selectedOwner.name }}
+        </h1>
+
+        <p class="text-gray-600">
+          CI: {{ selectedOwner.ci || 'Sin CI' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        type="button"
+        (click)="handleEdit(selectedOwner)"
+        class="px-4 py-2 bg-yellow-500 text-white rounded-lg"
+      >
+        Editar
+      </button>
+
+      <button
+        type="button"
+        (click)="handleDelete(selectedOwner.id)"
+        class="px-4 py-2 bg-red-600 text-white rounded-lg"
+      >
+        Eliminar
+      </button>
+    </div>
+
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+      Información del propietario
+    </h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div>
+        <p class="text-sm text-gray-500">Nombre</p>
+        <p class="text-gray-900 font-medium">
+          {{ selectedOwner.name }}
+        </p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Teléfono</p>
+        <p class="text-gray-900 font-medium">
+          {{ selectedOwner.phone || 'Sin teléfono' }}
+        </p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Email</p>
+        <p class="text-gray-900 font-medium">
+          {{ selectedOwner.email || 'Sin email' }}
+        </p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Fecha de registro</p>
+        <p class="text-gray-900 font-medium">
+          {{ selectedOwner.join_date || 'Sin fecha' }}
+        </p>
+      </div>
+
+      <div class="md:col-span-2">
+        <p class="text-sm text-gray-500">Dirección</p>
+        <p class="text-gray-900 font-medium">
+          {{ selectedOwner.address || 'Sin dirección' }}
+        </p>
+
+        <button
+          type="button"
+          (click)="openOwnerLocation(selectedOwner)"
+          class="mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+        >
+          Ver en Google Maps
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+      Vehículos del propietario
+    </h2>
+
+    <div class="overflow-x-auto">
+
+      <table class="w-full">
+
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left">Placa</th>
+            <th class="px-4 py-3 text-left">Modelo</th>
+            <th class="px-4 py-3 text-left">Desde</th>
+            <th class="px-4 py-3 text-left">Hasta</th>
+            <th class="px-4 py-3 text-left">Estado</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          <tr
+            *ngFor="let vehicle of selectedOwnerVehicles"
+            class="border-t"
+          >
+            <td class="px-4 py-3 font-medium">
+              {{ vehicle.plate }}
+            </td>
+
+            <td class="px-4 py-3">
+              {{ vehicle.model }} - {{ vehicle.year }}
+            </td>
+
+            <td class="px-4 py-3">
+              {{ vehicle.registration_date || 'Sin fecha' }}
+            </td>
+
+            <td class="px-4 py-3">
+              {{
+                vehicle.management_status === 'active'
+                  ? 'Actualidad'
+                  : (vehicle.deactivation_date || 'Sin fecha')
+              }}
+            </td>
+
+            <td class="px-4 py-3">
+              <span
+                class="px-2 py-1 rounded-full text-sm"
+                [ngClass]="{
+                  'bg-green-100 text-green-700': vehicle.management_status === 'active',
+                  'bg-red-100 text-red-700': vehicle.management_status === 'inactive'
+                }"
+              >
+                {{
+                  vehicle.management_status === 'active'
+                    ? 'Actual'
+                    : 'Finalizado'
+                }}
+              </span>
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <p
+      *ngIf="selectedOwnerVehicles.length === 0"
+      class="text-gray-500 mt-4"
+    >
+      Este propietario no tiene vehículos registrados.
+    </p>
 
   </div>
 

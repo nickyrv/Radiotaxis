@@ -53,10 +53,14 @@ export class OwnersManagementComponent implements OnInit {
     join_date: null
   };
 
-  constructor(private ownerService: OwnerService) {}
+  constructor(
+    private ownerService: OwnerService,
+    private vehicleService: VehicleService
+  ) {}
 
   ngOnInit() {
     this.loadOwners();
+    this.loadVehicles();
   }
 
   loadOwners() {
@@ -67,6 +71,17 @@ export class OwnersManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar propietarios:', error);
+      }
+    });
+  }
+
+  loadVehicles() {
+    this.vehicleService.getVehicles().subscribe({
+      next: (data) => {
+        this.vehicles = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar vehículos:', error);
       }
     });
   }
@@ -189,6 +204,24 @@ export class OwnersManagementComponent implements OnInit {
 
     return true;
   }
+
+  selectOwner(owner: Owner) {
+  this.selectedOwner = owner;
+}
+
+backToList() {
+  this.selectedOwner = null;
+}
+
+get selectedOwnerVehicles() {
+  if (!this.selectedOwner) {
+    return [];
+  }
+
+  return this.vehicles.filter(vehicle =>
+    Number(vehicle.owner_id) === Number(this.selectedOwner?.id)
+  );
+}
 
   saveOwner() {
 
