@@ -80,7 +80,8 @@ export class DriverDashboardComponent implements OnInit {
     detail: '',
     event_date: '',
     cost: null,
-    description: ''
+    description: '',
+    maintenance_status: 'pending'
   };
 
   constructor(
@@ -224,7 +225,8 @@ export class DriverDashboardComponent implements OnInit {
       detail: '',
       event_date: today,
       cost: null,
-      description: ''
+      description: '',
+      maintenance_status: 'pending'
     };
 
     this.showIncidentForm = true;

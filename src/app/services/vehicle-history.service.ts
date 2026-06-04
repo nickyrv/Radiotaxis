@@ -17,6 +17,7 @@ export interface VehicleHistory {
 
   description: string | null;
   created_at: string;
+  maintenance_status: string;
 }
 
 export interface VehicleHistoryRequest {
@@ -30,6 +31,7 @@ export interface VehicleHistoryRequest {
   cost: number | null;
 
   description: string | null;
+  maintenance_status: string;
 }
 
 @Injectable({

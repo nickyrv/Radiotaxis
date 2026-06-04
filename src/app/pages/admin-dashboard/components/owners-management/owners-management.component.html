@@ -206,6 +206,7 @@
             <th class="px-4 py-3 text-left">Desde</th>
             <th class="px-4 py-3 text-left">Hasta</th>
             <th class="px-4 py-3 text-left">Estado</th>
+            <th class="px-4 py-3 text-left">Administración</th>
           </tr>
         </thead>
 
@@ -250,6 +251,31 @@
                 }}
               </span>
             </td>
+           <td class="px-4 py-3">
+
+            <span
+              class="px-2 py-1 rounded-full text-sm"
+              [ngClass]="{
+                'bg-green-100 text-green-700':
+                  getVehicleAdministrationStatus(vehicle.id) === 'Continua',
+
+                'bg-yellow-100 text-yellow-700':
+                  getVehicleAdministrationStatus(vehicle.id) === 'Discontinua'
+              }"
+            >
+              {{ getVehicleAdministrationStatus(vehicle.id) }}
+            </span>
+
+            <button
+              *ngIf="getVehicleAdministrationStatus(vehicle.id) === 'Discontinua'"
+              type="button"
+              (click)="openVehicleHistoryModal(vehicle); $event.stopPropagation()"
+              class="block mt-2 text-blue-600 hover:text-blue-800 text-sm"
+            >
+              Ver historial
+            </button>
+
+          </td>
           </tr>
 
         </tbody>
@@ -426,4 +452,69 @@
     </div>
 
   </div>
+
+ 
 </div>
+
+ <div
+    *ngIf="showVehicleHistoryModal && selectedVehicleForHistory"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
+  >
+    <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+
+      <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-bold text-gray-900">
+            Historial de administración
+          </h2>
+
+          <p class="text-gray-600">
+            {{ selectedVehicleForHistory.plate }}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeVehicleHistoryModal()"
+          class="text-gray-500 hover:text-gray-800"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+
+        <div
+          *ngFor="let event of getVehicleManagementEvents(selectedVehicleForHistory.id)"
+          class="border-l-4 border-yellow-400 pl-4 py-2"
+        >
+          <p class="font-semibold text-gray-900">
+            {{ getVehicleEventLabel(event.event_type) }}
+          </p>
+
+          <p class="text-sm text-gray-600">
+            {{ event.event_datetime | date:'yyyy-MM-dd HH:mm:ss' }}
+          </p>
+
+          <p
+            *ngIf="event.notes"
+            class="text-sm text-gray-500 mt-1"
+          >
+            {{ event.notes }}
+          </p>
+        </div>
+
+      </div>
+
+      <div class="p-6 border-t border-gray-200 flex justify-end">
+        <button
+          type="button"
+          (click)="closeVehicleHistoryModal()"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>

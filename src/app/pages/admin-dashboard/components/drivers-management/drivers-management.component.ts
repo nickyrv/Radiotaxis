@@ -55,6 +55,10 @@ export class DriversManagementComponent implements OnInit {
   editingDriver: Driver | null = null;
 
   selectedPhotoFile: File | null = null;
+  selectedHouseDoorFile: File | null = null;
+  selectedCiFrontFile: File | null = null;
+  selectedCiBackFile: File | null = null;
+  selectedElectricityBillFile: File | null = null;
 
   selectedDriver: Driver | null = null;
 
@@ -111,7 +115,10 @@ export class DriversManagementComponent implements OnInit {
       address_lng: null,
 
       photo_url: '',
-
+      house_door_photo_url: '',
+      ci_front_photo_url: '',
+      ci_back_photo_url: '',
+      electricity_bill_photo_url: '',
       status: 'active',
 
       vehicle_id: null
@@ -349,6 +356,10 @@ export class DriversManagementComponent implements OnInit {
       address_lng: driver.address_lng,
 
       photo_url: driver.photo_url,
+      house_door_photo_url: driver.house_door_photo_url,
+      ci_front_photo_url: driver.ci_front_photo_url,
+      ci_back_photo_url: driver.ci_back_photo_url,
+      electricity_bill_photo_url: driver.electricity_bill_photo_url,
 
       status: driver.status,
 
@@ -412,6 +423,10 @@ export class DriversManagementComponent implements OnInit {
       address_lng: driver.address_lng,
 
       photo_url: driver.photo_url,
+      house_door_photo_url: driver.house_door_photo_url,
+      ci_front_photo_url: driver.ci_front_photo_url,
+      ci_back_photo_url: driver.ci_back_photo_url,
+      electricity_bill_photo_url: driver.electricity_bill_photo_url,
 
       status: newStatus,
 
@@ -511,6 +526,35 @@ export class DriversManagementComponent implements OnInit {
     return true;
   }
 
+  onDriverDocumentSelected(
+    event: Event,
+    documentType: 'house_door' | 'ci_front' | 'ci_back' | 'electricity_bill'
+  ) {
+    const input = event.target as HTMLInputElement;
+
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
+
+    const file = input.files[0];
+
+    if (documentType === 'house_door') {
+      this.selectedHouseDoorFile = file;
+    }
+
+    if (documentType === 'ci_front') {
+      this.selectedCiFrontFile = file;
+    }
+
+    if (documentType === 'ci_back') {
+      this.selectedCiBackFile = file;
+    }
+
+    if (documentType === 'electricity_bill') {
+      this.selectedElectricityBillFile = file;
+    }
+  }
+
   saveDriver() {
     if (!this.validateDriverForm()) {
       return;
@@ -552,40 +596,90 @@ export class DriversManagementComponent implements OnInit {
     }
   }
 
-  uploadPhotoAfterSave(driverId: number) {
-    if (!this.selectedPhotoFile) {
+  async uploadPhotoAfterSave(driverId: number) {
+
+    try {
+
+      if (this.selectedPhotoFile) {
+        await this.driverService
+          .uploadDriverPhoto(driverId, this.selectedPhotoFile)
+          .toPromise();
+      }
+
+      if (this.selectedHouseDoorFile) {
+        await this.driverService
+          .uploadDriverDocument(
+            driverId,
+            'house_door',
+            this.selectedHouseDoorFile
+          )
+          .toPromise();
+      }
+
+      if (this.selectedCiFrontFile) {
+        await this.driverService
+          .uploadDriverDocument(
+            driverId,
+            'ci_front',
+            this.selectedCiFrontFile
+          )
+          .toPromise();
+      }
+
+      if (this.selectedCiBackFile) {
+        await this.driverService
+          .uploadDriverDocument(
+            driverId,
+            'ci_back',
+            this.selectedCiBackFile
+          )
+          .toPromise();
+      }
+
+      if (this.selectedElectricityBillFile) {
+        await this.driverService
+          .uploadDriverDocument(
+            driverId,
+            'electricity_bill',
+            this.selectedElectricityBillFile
+          )
+          .toPromise();
+      }
+
       this.closeModal();
       this.loadDrivers();
-      return;
-    }
 
-    this.driverService.uploadDriverPhoto(
-      driverId,
-      this.selectedPhotoFile
-    ).subscribe({
-      next: () => {
-        this.closeModal();
-        this.loadDrivers();
-      },
-      error: (error) => {
-        console.error('Error al subir foto:', error);
-        alert('El conductor se guardó, pero no se pudo subir la foto');
-        this.closeModal();
-        this.loadDrivers();
-      }
-    });
-  }
+    } catch (error) {
+
+      console.error(error);
+
+      alert(
+        'El conductor fue guardado, pero ocurrió un problema al subir algún documento.'
+      );
+
+      this.closeModal();
+      this.loadDrivers();
+    }
+  }  
 
   openNewDriverForm() {
     this.editingDriver = null;
     this.driverForm = this.getEmptyDriverForm();
     this.selectedPhotoFile = null;
     this.showForm = true;
+    this.selectedHouseDoorFile = null;
+    this.selectedCiFrontFile = null;
+    this.selectedCiBackFile = null;
+    this.selectedElectricityBillFile = null;
   }
 
   closeModal() {
     this.showForm = false;
     this.selectedPhotoFile = null;
+    this.selectedHouseDoorFile = null;
+    this.selectedCiFrontFile = null;
+    this.selectedCiBackFile = null;
+    this.selectedElectricityBillFile = null;
   }
 
   getStatusColor(status: string): string {

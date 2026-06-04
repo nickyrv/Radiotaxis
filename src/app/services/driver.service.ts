@@ -4,26 +4,23 @@ import { Observable } from 'rxjs';
 
 export interface Driver {
   id: number;
-
   name: string;
   ci: string | null;
   phone: string | null;
   email: string | null;
-
   license: string | null;
   license_expiry: string | null;
   license_category: string | null;
-
   has_tic: boolean;
-
   address: string | null;
   address_lat: number | null;
   address_lng: number | null;
-
   photo_url: string | null;
-
+  house_door_photo_url: string | null;
+  ci_front_photo_url: string | null;
+  ci_back_photo_url: string | null;
+  electricity_bill_photo_url: string | null;
   status: string;
-
   vehicle_id: number | null;
 }
 
@@ -33,18 +30,18 @@ export interface DriverRequest {
   ci: string | null;
   phone: string | null;
   email: string | null;
-
   license: string | null;
   license_expiry: string | null;
   license_category: string | null;
-
   has_tic: boolean;
-
   address: string | null;
   address_lat: number | null;
   address_lng: number | null;
-
   photo_url: string | null;
+  house_door_photo_url: string | null;
+  ci_front_photo_url: string | null;
+  ci_back_photo_url: string | null;
+  electricity_bill_photo_url: string | null;
 
   status: string;
 
@@ -90,6 +87,22 @@ export class DriverService {
 
     return this.http.post<Driver>(
       `${this.apiUrl}${id}/upload-photo`,
+      formData
+    );
+  }
+
+  uploadDriverDocument(
+    id: number,
+    documentType: 'house_door' | 'ci_front' | 'ci_back' | 'electricity_bill',
+    file: File
+  ): Observable<Driver> {
+
+    const formData = new FormData();
+
+    formData.append('file', file);
+
+    return this.http.post<Driver>(
+      `${this.apiUrl}${id}/upload-document/${documentType}`,
       formData
     );
   }

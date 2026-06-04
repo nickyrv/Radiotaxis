@@ -13,6 +13,10 @@ import {
   VehicleService,
   Vehicle
 } from '../../../../services/vehicle.service';
+import {
+  VehicleManagementEventService,
+  VehicleManagementEvent
+} from '../../../../services/vehicle-management-event.service';
 
 @Component({
   selector: 'app-owners-management',
@@ -25,6 +29,7 @@ export class OwnersManagementComponent implements OnInit {
 
   owners: Owner[] = [];
   vehicles: Vehicle[] = [];
+  vehicleManagementEvents: VehicleManagementEvent[] = [];
 
 
   mapCenter: google.maps.LatLngLiteral = {
@@ -35,6 +40,8 @@ export class OwnersManagementComponent implements OnInit {
   mapZoom = 13;
 
   showForm = false;
+  showVehicleHistoryModal = false;
+  selectedVehicleForHistory: Vehicle | null = null;
 
   editingOwner: Owner | null = null;
   selectedOwner: Owner | null = null;
@@ -55,13 +62,17 @@ export class OwnersManagementComponent implements OnInit {
 
   constructor(
     private ownerService: OwnerService,
-    private vehicleService: VehicleService
+    private vehicleService: VehicleService,
+    private vehicleManagementEventService: VehicleManagementEventService
   ) {}
 
   ngOnInit() {
     this.loadOwners();
     this.loadVehicles();
+    this.loadVehicleManagementEvents();
   }
+
+  
 
   loadOwners() {
     this.ownerService.getOwners().subscribe({
@@ -71,6 +82,20 @@ export class OwnersManagementComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar propietarios:', error);
+      }
+    });
+  }
+
+  loadVehicleManagementEvents() {
+    this.vehicleManagementEventService.getEvents().subscribe({
+      next: (data) => {
+        this.vehicleManagementEvents = data;
+      },
+      error: (error) => {
+        console.error(
+          'Error al cargar historial de administración:',
+          error
+        );
       }
     });
   }
@@ -138,6 +163,18 @@ export class OwnersManagementComponent implements OnInit {
         alert('No se pudo eliminar');
       }
     });
+  }
+
+  openVehicleHistoryModal(vehicle: Vehicle) {
+    console.log('Abriendo historial de vehículo:', vehicle);
+
+    this.selectedVehicleForHistory = vehicle;
+    this.showVehicleHistoryModal = true;
+  }
+
+  closeVehicleHistoryModal() {
+    this.showVehicleHistoryModal = false;
+    this.selectedVehicleForHistory = null;
   }
 
   openNewOwnerForm() {
@@ -211,6 +248,36 @@ export class OwnersManagementComponent implements OnInit {
 
 backToList() {
   this.selectedOwner = null;
+}
+
+getVehicleManagementEvents(vehicleId: number) {
+  return this.vehicleManagementEvents
+    .filter(event => Number(event.vehicle_id) === Number(vehicleId))
+    .sort((a, b) =>
+      new Date(b.event_datetime).getTime() -
+      new Date(a.event_datetime).getTime()
+    );
+}
+
+getVehicleAdministrationStatus(vehicleId: number): string {
+  const events = this.getVehicleManagementEvents(vehicleId);
+
+  return events.length > 0
+    ? 'Discontinua'
+    : 'Continua';
+}
+
+getVehicleEventLabel(eventType: string): string {
+  switch (eventType) {
+    case 'deactivated':
+      return 'Vehículo dado de baja';
+
+    case 'reactivated':
+      return 'Vehículo reingresado';
+
+    default:
+      return eventType;
+  }
 }
 
 get selectedOwnerVehicles() {
@@ -312,13 +379,16 @@ get selectedOwnerVehicles() {
     );
   }
   openOwnerLocation(owner: Owner) {
-    if (!owner.address_lat || !owner.address_lng) {
+    const lat = Number(owner.address_lat);
+    const lng = Number(owner.address_lng);
+
+    if (isNaN(lat) || isNaN(lng)) {
       alert('Este propietario no tiene ubicación registrada');
       return;
     }
 
     window.open(
-      `https://www.google.com/maps?q=${owner.address_lat},${owner.address_lng}`,
+      `https://www.google.com/maps?q=${lat},${lng}`,
       '_blank'
     );
   }

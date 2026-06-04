@@ -486,17 +486,11 @@
             {{ accident.event_date }}
           </p>
         </div>
-
       </div>
-
     </div>
-
   </div>
-
 </div>
-
-  </div>
-
+</div>
 </div>
 
 <!-- Modal -->
@@ -554,6 +548,98 @@
           <p class="text-xs text-gray-500 mt-1">
             Puede cargar una foto tomada en el momento o seleccionada desde el equipo.
           </p>
+        </div>
+
+      </div>
+      <!-- DOCUMENTOS DEL CONDUCTOR -->
+      <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Documentos requeridos
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div>
+            <label class="block text-gray-700 mb-2">
+              Foto de puerta de casa
+            </label>
+
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onDriverDocumentSelected($event, 'house_door')"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            />
+
+            <p
+              *ngIf="driverForm.house_door_photo_url"
+              class="text-xs text-green-600 mt-1"
+            >
+              Documento cargado
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-2">
+              Carnet de identidad - Anverso
+            </label>
+
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onDriverDocumentSelected($event, 'ci_front')"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            />
+
+            <p
+              *ngIf="driverForm.ci_front_photo_url"
+              class="text-xs text-green-600 mt-1"
+            >
+              Documento cargado
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-2">
+              Carnet de identidad - Reverso
+            </label>
+
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onDriverDocumentSelected($event, 'ci_back')"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            />
+
+            <p
+              *ngIf="driverForm.ci_back_photo_url"
+              class="text-xs text-green-600 mt-1"
+            >
+              Documento cargado
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 mb-2">
+              Factura de luz
+            </label>
+
+            <input
+              type="file"
+              accept="image/*"
+              (change)="onDriverDocumentSelected($event, 'electricity_bill')"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            />
+
+            <p
+              *ngIf="driverForm.electricity_bill_photo_url"
+              class="text-xs text-green-600 mt-1"
+            >
+              Documento cargado
+            </p>
+          </div>
+
         </div>
 
       </div>

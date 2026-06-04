@@ -8,8 +8,6 @@ import {
   LoginResponse
 } from '../../services/auth.service';
 
-type UserRole = 'admin' | 'owner' | 'driver';
-
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -19,22 +17,17 @@ type UserRole = 'admin' | 'owner' | 'driver';
 })
 export class LoginComponent implements OnInit {
 
-  selectedRole: UserRole = 'admin';
-
   email = '';
   password = '';
   showPassword = false;
   loginMessage = '';
-
   failedAttempts = 0;
   maxAttempts = 3;
   isBlocked = false;
-
   showNotification = false;
   notificationTitle = '';
   notificationMessage = '';
   notificationType: 'success' | 'error' | 'warning' = 'error';
-
   showForgotPassword = false;
   recoveryEmail = '';
 
@@ -46,22 +39,13 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     const savedAttempts = localStorage.getItem('failedAttempts');
     const savedBlocked = localStorage.getItem('isBlocked');
-
     if (savedAttempts) {
       this.failedAttempts = Number(savedAttempts);
     }
-
     if (savedBlocked === 'true') {
       this.isBlocked = true;
       this.loginMessage = 'Acceso bloqueado';
     }
-  }
-
-  selectRole(role: UserRole) {
-    if (this.isBlocked) return;
-
-    this.selectedRole = role;
-    this.loginMessage = '';
   }
 
   showLoginNotification(
@@ -169,8 +153,7 @@ export class LoginComponent implements OnInit {
 
     this.authService.login({
       email: this.email,
-      password: this.password,
-      role: this.selectedRole
+      password: this.password
     }).subscribe({
       next: (user: LoginResponse) => {
 

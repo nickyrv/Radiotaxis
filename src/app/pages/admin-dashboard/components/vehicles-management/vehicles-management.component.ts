@@ -31,6 +31,11 @@ import {
   Driver
 } from '../../../../services/driver.service';
 
+import {
+  AlertService,
+  AlertRequest
+} from '../../../../services/alert.service';
+
 @Component({
   selector: 'app-vehicles-management',
   standalone: true,
@@ -53,6 +58,12 @@ export class VehiclesManagementComponent implements OnInit {
 
   selectedVehicle: Vehicle | null = null;
   selectedPhotoFile: File | null = null;
+
+  historyMode: 'completed' | 'scheduled' = 'completed';
+
+  historyIsRecurring = false;
+  historyRecurrenceValue: number | null = null;
+  historyRecurrenceUnit: string | null = null;
 
   searchTerm = '';
   activeDetailTab = 'general';
@@ -84,7 +95,8 @@ export class VehiclesManagementComponent implements OnInit {
     private vehicleHistoryService: VehicleHistoryService,
     private ownerService: OwnerService,
     private shiftService: ShiftService,
-    private driverService: DriverService
+    private driverService: DriverService,
+    private alertService: AlertService
   ) {}
 
   ngOnInit() {
@@ -127,17 +139,25 @@ export class VehiclesManagementComponent implements OnInit {
   }
 
   getEmptyHistoryForm(): VehicleHistoryRequest {
-    const today = new Date().toISOString().split('T')[0];
-
     return {
-      vehicle_id: this.selectedVehicle?.id || 0,
+      vehicle_id: 0,
       driver_id: null,
-      category: 'mantenimiento_general',
+
+      category: '',
       detail: '',
-      event_date: today,
+
+      event_date: '',
       cost: null,
-      description: ''
+
+      description: '',
+
+      maintenance_status: 'pending'
     };
+  }
+
+  onCompanyNameChange() {
+    this.vehicleForm.company_name =
+      (this.vehicleForm.company_name || '').toUpperCase();
   }
 
   loadVehicles() {
@@ -278,6 +298,11 @@ export class VehiclesManagementComponent implements OnInit {
       this.historyForm.category = 'accidente';
     }
 
+    this.historyMode = 'completed';
+    this.historyIsRecurring = false;
+    this.historyRecurrenceValue = null;
+    this.historyRecurrenceUnit = null;
+
     this.showNewHistoryForm = true;
   }
 
@@ -291,7 +316,9 @@ export class VehiclesManagementComponent implements OnInit {
       detail: history.detail,
       event_date: history.event_date,
       cost: history.cost,
-      description: history.description
+      description: history.description,
+      maintenance_status:
+      history.maintenance_status || 'pending'
     };
 
     this.showNewHistoryForm = true;
@@ -343,6 +370,55 @@ if (isAccident) {
 
   } else {
     this.historyForm.cost = null;
+  }
+
+  if (this.historyMode === 'scheduled') {
+    const alertPayload: AlertRequest = {
+      title: this.historyForm.detail || 'Mantenimiento programado',
+      description: this.historyForm.description,
+      type: 'vehicle',
+      severity: 'low',
+      status: 'pending',
+
+      alert_date: new Date().toISOString().split('T')[0],
+      due_date: this.historyForm.event_date,
+      completed_date: null,
+
+      related_entity: 'vehicle',
+      related_id: this.historyForm.vehicle_id,
+
+      vehicle_id: this.historyForm.vehicle_id,
+      driver_id: this.historyForm.driver_id,
+
+      category: this.historyForm.category,
+
+      estimated_cost: this.historyForm.cost,
+      final_cost: null,
+
+      notes: 'Alerta creada desde mantenimiento programado',
+
+      is_recurring: this.historyIsRecurring,
+      recurrence_value: this.historyIsRecurring
+        ? this.historyRecurrenceValue
+        : null,
+      recurrence_unit: this.historyIsRecurring
+        ? this.historyRecurrenceUnit
+        : null
+    };
+
+    this.alertService.createAlert(alertPayload).subscribe({
+      next: () => {
+        this.showNewHistoryForm = false;
+
+        alert('Mantenimiento programado creado como alerta');
+      },
+      error: (error) => {
+        console.error('Error al crear alerta:', error);
+        alert('No se pudo crear la alerta programada');
+      }
+    });
+
+    return;
   }
 
   if (this.editingHistory) {
@@ -530,22 +606,57 @@ if (isAccident) {
       return false;
     }
     
-    if (
-      this.vehicleForm.service_type === 'radio_taxi' &&
-      !this.vehicleForm.radio_code)
-      {
+    if (this.vehicleForm.service_type === 'radio_taxi') {
+      const radioCode = (this.vehicleForm.radio_code || '').trim();
+
+      const companyName = (this.vehicleForm.company_name || '')
+        .trim()
+        .toUpperCase();
+
+      if (!radioCode) {
         alert('El código interno es obligatorio para radio taxi');
-      return false;
+        return false;
       }
 
-    if (
-      this.vehicleForm.service_type === 'radio_taxi' &&
-      !this.vehicleForm.company_name
-    ) {
-      alert('Debe ingresar la empresa de radio taxi');
-      return false;
-    }
+      if (!companyName) {
+        alert('Debe ingresar la empresa de radio taxi');
+        return false;
+      }
 
+      this.vehicleForm.radio_code = radioCode;
+      this.vehicleForm.company_name = companyName;
+
+      const duplicatedSameCompany = this.vehicles.some(vehicle =>
+        (vehicle.radio_code || '').trim() === radioCode &&
+        (vehicle.company_name || '').trim().toUpperCase() === companyName &&
+        vehicle.id !== this.editingVehicle?.id &&
+        vehicle.status !== 'inactive' &&
+        vehicle.management_status === 'active'
+      );
+
+      if (duplicatedSameCompany) {
+        alert('El código interno ya está registrado en esta empresa de radio taxi');
+        return false;
+      }
+
+      const duplicatedOtherCompany = this.vehicles.find(vehicle =>
+        (vehicle.radio_code || '').trim() === radioCode &&
+        (vehicle.company_name || '').trim().toUpperCase() !== companyName &&
+        vehicle.id !== this.editingVehicle?.id &&
+        vehicle.status !== 'inactive' &&
+        vehicle.management_status === 'active'
+      );
+
+      if (duplicatedOtherCompany) {
+        const confirmSave = confirm(
+          `El código interno ${radioCode} ya existe en la empresa ${duplicatedOtherCompany.company_name}. ¿Desea registrarlo también para ${companyName}?`
+        );
+
+        if (!confirmSave) {
+          return false;
+        }
+      }
+    }
     if (!this.vehicleForm.color) {
       alert('Debe ingresar el color del vehículo');
       return false;
@@ -629,9 +740,17 @@ if (isAccident) {
   }
 
   getAssignedDriversForVehicle(vehicleId: number): Driver[] {
+    const vehicle = this.vehicles.find(v =>
+      Number(v.id) === Number(vehicleId)
+    );
+
+    if (!vehicle || vehicle.management_status !== 'active') {
+      return [];
+    }
+
     const directDrivers = this.drivers.filter(driver =>
       Number(driver.vehicle_id) === Number(vehicleId) &&
-      driver.status !== 'inactive'
+      driver.status === 'active'
     );
 
     const shiftDrivers = this.shifts
@@ -641,7 +760,11 @@ if (isAccident) {
         shift.driver_id !== null
       )
       .map(shift =>
-        this.drivers.find(driver => Number(driver.id) === Number(shift.driver_id))
+        this.drivers.find(driver =>
+          Number(driver.id) === Number(shift.driver_id) &&
+          Number(driver.vehicle_id) === Number(vehicleId) &&
+          driver.status === 'active'
+        )
       )
       .filter((driver): driver is Driver => !!driver);
 
@@ -652,7 +775,6 @@ if (isAccident) {
         array.findIndex(item => Number(item.id) === Number(driver.id)) === index
     );
   }
-
   getAssignedDriversStatus(vehicle: Vehicle): string {
     const assignedDrivers = this.getAssignedDriversForVehicle(vehicle.id);
 
@@ -703,8 +825,8 @@ if (isAccident) {
 
   handleDeactivate(vehicle: Vehicle) {
     const confirmDeactivate = confirm(
-      `¿Está seguro de dar de baja el vehículo ${vehicle.plate}?`
-    );
+    `¿Está seguro de dar de baja el vehículo ${vehicle.plate}?\n\nAl dar de baja este vehículo, los conductores asignados quedarán sin vehículo asignado.`
+  );
 
     if (!confirmDeactivate) return;
 
@@ -900,6 +1022,9 @@ assignDriverByAccidentDate() {
   }
 
   getTodayDriverId(vehicle: Vehicle): number | null {
+    if (vehicle.management_status !== 'active') {
+      return null;
+    }
     const activeShifts = this.shifts
       .filter(shift =>
         Number(shift.vehicle_id) === Number(vehicle.id) &&
@@ -907,6 +1032,13 @@ assignDriverByAccidentDate() {
         shift.driver_id !== undefined &&
         Number(shift.is_active) === 1
       )
+      .filter(shift => {
+        const driver = this.drivers.find(driver =>
+          Number(driver.id) === Number(shift.driver_id)
+        );
+
+        return driver?.status === 'active';
+      })
       .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
 
     if (activeShifts.length === 0) {
@@ -916,10 +1048,10 @@ assignDriverByAccidentDate() {
 
       const directDriver = this.drivers.find(driver =>
         Number(driver.vehicle_id) === Number(vehicle.id) &&
-        driver.status !== 'inactive'
+        driver.status === 'active'
       );
 
-      return directDriver?.id || vehicle.current_driver_id || null;
+      return directDriver?.id || null;
     }
 
     if (vehicle.management_type === 'solo') {
@@ -941,6 +1073,41 @@ assignDriverByAccidentDate() {
     const index = Math.abs(diffDays) % activeShifts.length;
 
     return activeShifts[index]?.driver_id || null;
+  }
+
+  get selectedVehicleDriverAssignmentHistory() {
+    if (!this.selectedVehicle) {
+      return [];
+    }
+
+    const directDrivers = this.drivers
+      .filter(driver =>
+        Number(driver.vehicle_id) === Number(this.selectedVehicle?.id) &&
+        driver.status !== 'inactive'
+      )
+      .map(driver => ({
+        driver,
+        start_date: this.selectedVehicle?.registration_date || null,
+        end_date: null,
+        status: 'Actual'
+      }));
+
+    const shiftDrivers = this.shifts
+      .filter(shift =>
+        Number(shift.vehicle_id) === Number(this.selectedVehicle?.id) &&
+        shift.driver_id !== null
+      )
+      .map(shift => ({
+        driver: this.drivers.find(driver =>
+          Number(driver.id) === Number(shift.driver_id)
+        ),
+        start_date: shift.start_time,
+        end_date: Number(shift.is_active) === 1 ? null : shift.end_time,
+        status: Number(shift.is_active) === 1 ? 'Actual' : 'Finalizado'
+      }))
+      .filter(item => !!item.driver);
+
+    return [...directDrivers, ...shiftDrivers];
   }
 
   getRestrictionDayFromPlate(plate: string): string {

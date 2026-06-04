@@ -6,121 +6,616 @@
     </h1>
 
     <p class="text-gray-600 mt-1">
-      Monitoree vencimientos y eventos importantes
+      Monitoreo de mantenimientos, vencimientos y documentación
     </p>
   </div>
 
-  <!-- RESUMEN -->
+  <!-- Tabs -->
+  <div class="flex gap-3">
+    <button
+      type="button"
+      (click)="setSection('vehicles')"
+      [ngClass]="activeSection === 'vehicles'
+        ? 'bg-blue-600 text-white'
+        : 'bg-gray-100 text-gray-700'"
+      class="px-4 py-2 rounded-lg"
+    >
+      Alertas por Vehículo
+    </button>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <button
+      type="button"
+      (click)="setSection('drivers')"
+      [ngClass]="activeSection === 'drivers'
+        ? 'bg-blue-600 text-white'
+        : 'bg-gray-100 text-gray-700'"
+      class="px-4 py-2 rounded-lg"
+    >
+      Alertas por Conductor
+    </button>
+  </div>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
+  <!-- VEHÍCULOS -->
+  <div *ngIf="activeSection === 'vehicles' && !selectedVehicle">
 
-      <div class="text-3xl font-bold text-red-600">
-        {{ highAlerts }}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+      <div
+        *ngFor="let vehicle of vehicles"
+        (click)="selectVehicle(vehicle)"
+        class="bg-white border border-gray-200 rounded-xl p-5 cursor-pointer hover:shadow-lg transition-all"
+      >
+        <div class="flex justify-between items-start gap-3">
+          <div>
+            <h3 class="text-lg font-bold text-gray-900">
+              {{ getVehicleCardTitle(vehicle) }}
+            </h3>
+
+            <p class="text-gray-600">
+              {{ vehicle.model }} - {{ vehicle.plate }}
+            </p>
+          </div>
+
+          <span class="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+            {{ vehicle.service_type === 'radio_taxi' ? 'Radio Taxi' : 'Taxi' }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 mt-4 text-center text-sm">
+
+          <div class="bg-red-50 rounded-lg p-2">
+            <p class="font-bold text-red-700">
+              {{ countVehicleAllAlertsBySeverity(vehicle.id, 'high') }}
+            </p>
+            <p class="text-red-600">Urgentes</p>
+          </div>
+
+          <div class="bg-yellow-50 rounded-lg p-2">
+            <p class="font-bold text-yellow-700">
+              {{ countVehicleAllAlertsBySeverity(vehicle.id, 'medium') }}
+            </p>
+            <p class="text-yellow-600">Medias</p>
+          </div>
+
+          <div class="bg-green-50 rounded-lg p-2">
+            <p class="font-bold text-green-700">
+              {{ countVehicleAllAlertsBySeverity(vehicle.id, 'low') }}
+            </p>
+            <p class="text-green-600">Normales</p>
+          </div>
+
+          <div class="bg-red-100 rounded-lg p-2">
+            <p class="font-bold text-red-900">
+              {{ countVehicleAllAlertsBySeverity(vehicle.id, 'expired') }}
+            </p>
+            <p class="text-red-800">Vencidas</p>
+          </div>
+        </div>
       </div>
 
-      <p class="text-gray-600 mt-2">
-        Alertas Críticas
-      </p>
-
     </div>
+  </div>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
+  <!-- CONDUCTORES -->
+  <div *ngIf="activeSection === 'drivers' && !selectedDriver">
 
-      <div class="text-3xl font-bold text-yellow-600">
-        {{ mediumAlerts }}
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+
+      <div
+        *ngFor="let driver of drivers"
+        (click)="selectDriver(driver)"
+        class="bg-white border border-gray-200 rounded-xl p-5 cursor-pointer hover:shadow-lg transition-all"
+      >
+        <h3 class="text-lg font-bold text-gray-900">
+          {{ driver.name }}
+        </h3>
+
+        <p class="text-gray-600">
+          Licencia: {{ driver.license || 'Sin licencia' }}
+        </p>
+
+        <p class="text-gray-600">
+          Vence: {{ driver.license_expiry || 'Sin fecha' }}
+        </p>
+
+        <div class="mt-4">
+          <span
+            class="px-2 py-1 rounded-full text-sm"
+            [ngClass]="getDaysUntil(driver.license_expiry) !== null && getDaysUntil(driver.license_expiry)! <= 2
+              ? 'bg-red-100 text-red-700'
+              : getDaysUntil(driver.license_expiry) !== null && getDaysUntil(driver.license_expiry)! <= 7
+                ? 'bg-yellow-100 text-yellow-700'
+                : 'bg-green-100 text-green-700'"
+          >
+            {{
+              getDaysUntil(driver.license_expiry) !== null
+                ? 'Vence en ' + getDaysUntil(driver.license_expiry) + ' días'
+                : 'Sin control de licencia'
+            }}
+          </span>
+        </div>
       </div>
 
-      <p class="text-gray-600 mt-2">
-        Alertas Medias
-      </p>
+    </div>
+  </div>
+</div>
+<!-- DETALLE VEHÍCULO -->
+<div
+  *ngIf="selectedVehicle"
+  class="space-y-6"
+>
+  <div class="flex justify-between items-center gap-4">
 
+    <div>
+      <button
+        type="button"
+        (click)="backToCards()"
+        class="mb-3 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+      >
+        ← Volver
+      </button>
+
+      <h2 class="text-2xl font-bold text-gray-900">
+        {{ getVehicleCardTitle(selectedVehicle) }}
+      </h2>
+
+      <p class="text-gray-600">
+        {{ selectedVehicle.model }} - {{ selectedVehicle.plate }}
+      </p>
     </div>
 
-    <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-      <div class="text-3xl font-bold text-blue-600">
-        {{ documentAlerts }}
-      </div>
-
-      <p class="text-gray-600 mt-2">
-        Vencimientos
-      </p>
-
-    </div>
+    <button
+      type="button"
+      (click)="openVehicleAlertForm(selectedVehicle)"
+      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+    >
+      Nueva alerta
+    </button>
 
   </div>
 
-  <!-- LISTA -->
+  <!-- Filtros -->
+  <div class="bg-white border rounded-lg p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Buscar alerta..."
+      class="px-4 py-2 border rounded-lg"
+    />
+
+    <select
+      [(ngModel)]="categoryFilter"
+      class="px-4 py-2 border rounded-lg"
+    >
+      <option value="">Todas las categorías</option>
+      <option value="liquido_frenos">Líquido de frenos</option>
+      <option value="aceite">Cambio de aceite</option>
+      <option value="pastillas">Pastillas</option>
+      <option value="llantas">Llantas</option>
+      <option value="soat">SOAT</option>
+      <option value="documentacion">Documentación</option>
+    </select>
+
+    <select
+      [(ngModel)]="statusFilter"
+      class="px-4 py-2 border rounded-lg"
+    >
+      <option value="">Todos los estados</option>
+      <option value="low">Normales</option>
+      <option value="medium">Medias</option>
+      <option value="high">Urgentes</option>
+      <option value="expired">Vencidas</option>
+      <option value="completed">Realizadas</option>
+      <option value="cancelled">No realizadas</option>
+    </select>
+
+  </div>
+
+  <div class="space-y-4">
+    <div
+      *ngFor="let history of getVehicleHistoryAlerts(selectedVehicle.id)"
+      class="rounded-xl p-5 border-2"
+      [ngClass]="getHistoryCardColor(history)"
+    >
+      <div class="flex justify-between gap-4">
+
+        <div>
+          <h3 class="font-bold text-gray-900">
+            {{ history.detail || 'Sin detalle' }}
+          </h3>
+
+          <p class="text-gray-600 mt-1">
+            {{ history.description || 'Sin descripción' }}
+          </p>
+
+          <p class="text-sm text-gray-500 mt-2">
+            Categoría: {{ getCategoryLabel(history.category) }}
+          </p>
+
+          <p class="text-sm text-gray-500">
+            Fecha: {{ history.event_date }}
+          </p>
+
+          <p class="text-sm text-gray-500">
+            Costo: Bs {{ history.cost || 0 }}
+          </p>
+        </div>
+
+        <div class="flex flex-col items-end gap-2">
+
+        <span
+          class="h-fit px-3 py-1 rounded-full text-sm"
+          [ngClass]="getHistoryBadge(history)"
+        >
+          {{ getHistoryStatusLabel(history) }}
+        </span>
+
+        <div
+          *ngIf="!history.maintenance_status || history.maintenance_status === 'pending'"
+          class="flex gap-2 mt-2"
+        >                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+          <button
+            type="button"
+            (click)="openHistoryCompleteModal(history)"
+            class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+          >
+            Marcar realizada
+          </button>
+
+          <button
+            type="button"
+            (click)="markHistoryCancelled(history)"
+            class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+          >
+            No realizada
+          </button>
+        </div>
+
+      </div>      
+    </div>
+    </div>
+   
+
+    <p
+      *ngIf="getFilteredAlertsForSelectedVehicle().length === 0"
+      class="text-gray-500"
+    >
+      No hay alertas para este vehículo.
+    </p>
+
+  </div>
+</div>
+<!-- DETALLE CONDUCTOR -->
+<div
+  *ngIf="selectedDriver"
+  class="space-y-6"
+>
+  <div class="flex justify-between items-center gap-4">
+
+    <div>
+      <button
+        type="button"
+        (click)="backToCards()"
+        class="mb-3 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+      >
+        ← Volver
+      </button>
+
+      <h2 class="text-2xl font-bold text-gray-900">
+        {{ selectedDriver.name }}
+      </h2>
+
+      <p class="text-gray-600">
+        Licencia: {{ selectedDriver.license || 'Sin licencia' }}
+      </p>
+    </div>
+
+    <button
+      type="button"
+      (click)="openDriverAlertForm(selectedDriver)"
+      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+    >
+      Nueva alerta
+    </button>
+
+  </div>
 
   <div class="space-y-4">
 
     <div
-      *ngFor="let alert of alerts"
-      class="rounded-lg border-2 p-6"
-      [ngClass]="getSeverityColor(alert.severity)"
+      *ngFor="let alert of getFilteredAlertsForSelectedDriver()"
+      class="bg-white border rounded-xl p-5"
     >
-
-      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-
+      <div class="flex justify-between gap-4">
         <div>
-
-          <h3 class="text-lg font-semibold text-gray-900">
+          <h3 class="font-bold text-gray-900">
             {{ alert.title }}
           </h3>
 
           <p class="text-gray-600 mt-1">
-            {{ alert.description }}
+            {{ alert.description || 'Sin descripción' }}
           </p>
 
+          <p class="text-sm text-gray-500 mt-2">
+            Categoría: {{ getCategoryLabel(alert.category) }}
+          </p>
+
+          <p class="text-sm text-gray-500">
+            Fecha límite: {{ alert.due_date || alert.alert_date }}
+          </p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
-
-          <span
-            class="px-3 py-1 rounded-full text-sm"
-            [ngClass]="getSeverityBadge(alert.severity)"
-          >
-            {{ getSeverityLabel(alert.severity) }}
-          </span>
-
-          <span class="px-3 py-1 rounded-full text-sm bg-white border border-gray-300 text-gray-700">
-            {{ getTypeLabel(alert.type) }}
-          </span>
-
-          <span
-            class="px-3 py-1 rounded-full text-sm"
-            [ngClass]="{
-              'bg-green-100 text-green-700': alert.status === 'resolved',
-              'bg-gray-100 text-gray-700': alert.status !== 'resolved'
-            }"
-          >
-            {{ getStatusLabel(alert.status) }}
-          </span>
-
-        </div>
-
+        <span
+          class="h-fit px-3 py-1 rounded-full text-sm"
+          [ngClass]="getSeverityBadgeFromAlert(alert)"
+        >
+          {{ getSeverityLabelFromAlert(alert) }}
+        </span>
       </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
-
-        <span class="text-sm text-gray-500">
-          {{ alert.alert_date }}
-        </span>
-
+      <div
+        *ngIf="alert.status === 'pending'"
+        class="flex gap-2 mt-4"
+      >
         <button
-          *ngIf="alert.status !== 'resolved'"
-          (click)="resolveAlert(alert.id)"
-          class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          type="button"
+          (click)="completeAlert(alert)"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
         >
-          Marcar Resuelta
+          Marcar realizada
         </button>
 
+        <button
+          type="button"
+          (click)="cancelAlert(alert)"
+          class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          No realizada
+        </button>
+      </div>
+    </div>
+
+    <p
+      *ngIf="getFilteredAlertsForSelectedDriver().length === 0"
+      class="text-gray-500"
+    >
+      No hay alertas para este conductor.
+    </p>
+
+  </div>
+</div>
+<!-- MODAL NUEVA ALERTA -->
+<div
+  *ngIf="showAlertForm"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-xl w-full max-h-[90vh] overflow-y-auto">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        Nueva alerta
+      </h2>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <div>
+        <label class="block text-gray-700 mb-2">Título</label>
+        <input
+          type="text"
+          [(ngModel)]="alertForm.title"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Descripción</label>
+        <textarea
+          [(ngModel)]="alertForm.description"
+          class="w-full px-4 py-2 border rounded-lg"
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Categoría</label>
+        <select
+          [(ngModel)]="alertForm.category"
+          class="w-full px-4 py-2 border rounded-lg"
+        >
+          <option value="">Seleccionar...</option>
+          <option value="liquido_frenos">Líquido de frenos</option>
+          <option value="aceite">Cambio de aceite</option>
+          <option value="pastillas">Pastillas</option>
+          <option value="llantas">Llantas</option>
+          <option value="soat">SOAT</option>
+          <option value="licencia">Licencia</option>
+          <option value="tic">TIC</option>
+          <option value="documentacion">Documentación</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Fecha límite</label>
+        <input
+          type="date"
+          [(ngModel)]="alertForm.due_date"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">
+          Costo estimado
+        </label>
+        <input
+          type="number"
+          [(ngModel)]="alertForm.estimated_cost"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">
+          Notas
+        </label>
+        <input
+          type="text"
+          [(ngModel)]="alertForm.notes"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
       </div>
 
     </div>
 
-  </div>
+    <div class="p-6 border-t flex justify-end gap-3">
+      <button
+        type="button"
+        (click)="closeAlertForm()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
 
+      <button
+        type="button"
+        (click)="saveAlert()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Guardar
+      </button>
+    </div>
+
+  </div>
+</div>
+<!-- MODAL COMPLETAR ALERTA -->
+<div
+  *ngIf="showCompleteModal && selectedAlertToComplete"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
+>
+  <div class="bg-white rounded-lg max-w-md w-full">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        Completar alerta
+      </h2>
+
+      <p class="text-gray-600 mt-1">
+        {{ selectedAlertToComplete.title }}
+      </p>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <div>
+        <label class="block text-gray-700 mb-2">
+          Costo real *
+        </label>
+
+        <input
+          type="number"
+          [(ngModel)]="completeForm.final_cost"
+          class="w-full px-4 py-2 border rounded-lg"
+          placeholder="Ej. 250"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">
+          Observaciones
+        </label>
+
+        <textarea
+          [(ngModel)]="completeForm.notes"
+          class="w-full px-4 py-2 border rounded-lg"
+          placeholder="Detalle del trabajo realizado"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end gap-3">
+
+      <button
+        type="button"
+        (click)="closeCompleteModal()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        (click)="confirmCompleteAlert()"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg"
+      >
+        Guardar como realizada
+      </button>
+
+    </div>
+
+  </div>
+</div>
+<div
+  *ngIf="showHistoryCompleteModal && selectedHistoryToComplete"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
+>
+  <div class="bg-white rounded-lg max-w-md w-full">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        Marcar mantenimiento como realizado
+      </h2>
+
+      <p class="text-gray-600 mt-1">
+        {{ selectedHistoryToComplete.detail }}
+      </p>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <div>
+        <label class="block text-gray-700 mb-2">
+          Costo real *
+        </label>
+
+        <input
+          type="number"
+          [(ngModel)]="historyCompleteForm.cost"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">
+          Observación
+        </label>
+
+        <textarea
+          [(ngModel)]="historyCompleteForm.notes"
+          class="w-full px-4 py-2 border rounded-lg"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end gap-3">
+      <button
+        type="button"
+        (click)="closeHistoryCompleteModal()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        type="button"
+        (click)="confirmHistoryCompleted()"
+        class="px-4 py-2 bg-green-600 text-white rounded-lg"
+      >
+        Guardar
+      </button>
+    </div>
+
+  </div>
 </div>
