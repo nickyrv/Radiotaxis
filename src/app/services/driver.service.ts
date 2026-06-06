@@ -20,6 +20,7 @@ export interface Driver {
   ci_front_photo_url: string | null;
   ci_back_photo_url: string | null;
   electricity_bill_photo_url: string | null;
+  criminal_record_pdf_url: string | null;
   status: string;
   vehicle_id: number | null;
 }
@@ -42,9 +43,8 @@ export interface DriverRequest {
   ci_front_photo_url: string | null;
   ci_back_photo_url: string | null;
   electricity_bill_photo_url: string | null;
-
+  criminal_record_pdf_url: string | null;
   status: string;
-
   vehicle_id: number | null;
 }
 
@@ -73,6 +73,19 @@ export class DriverService {
     return this.http.put<Driver>(
       `${this.apiUrl}${id}`,
       driver
+    );
+  }
+
+  uploadCriminalRecord(
+    id: number,
+    file: File
+  ): Observable<Driver> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<Driver>(
+      `${this.apiUrl}${id}/upload-criminal-record`,
+      formData
     );
   }
 

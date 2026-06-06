@@ -29,6 +29,10 @@ import {
   Shift
 } from '../../../../services/shift.service';
 
+import {
+  ShiftDayService
+} from '../../../../services/shift-day.service';
+
 @Component({
   selector: 'app-drivers-management',
   standalone: true,
@@ -42,35 +46,31 @@ export class DriversManagementComponent implements OnInit {
   vehicles: Vehicle[] = [];
   payments: Payment[] = [];
   shifts: Shift[] = [];
-
   vehicleHistory: VehicleHistory[] = [];
-
   paymentVehicleFilter = '';
-
   paymentStartDate = '';
-
   paymentEndDate = '';
   showForm = false;
-
+  showImageModal = false;
+  selectedImageUrl = '';
+  selectedImageTitle = '';
   editingDriver: Driver | null = null;
-
   selectedPhotoFile: File | null = null;
   selectedHouseDoorFile: File | null = null;
   selectedCiFrontFile: File | null = null;
   selectedCiBackFile: File | null = null;
   selectedElectricityBillFile: File | null = null;
-
+  selectedCriminalRecordFile: File | null = null;
   selectedDriver: Driver | null = null;
-
+  showStartShiftModal = false;
+  pendingShiftDriver: Driver | null = null;
+  pendingShiftVehicleId: number | null = null;
   mapCenter: google.maps.LatLngLiteral = {
     lat: -16.5000,
     lng: -68.1500
   };
-
   mapZoom = 13;
-
   searchTerm = '';
-
   driverForm: DriverRequest = this.getEmptyDriverForm();
 
   constructor(
@@ -78,7 +78,8 @@ export class DriversManagementComponent implements OnInit {
     private vehicleService: VehicleService,
     private paymentService: PaymentService,
     private vehicleHistoryService: VehicleHistoryService,
-    private shiftService: ShiftService
+    private shiftService: ShiftService,
+    private shiftDayService: ShiftDayService
   ) {}
 
   ngOnInit() {
@@ -95,6 +96,21 @@ export class DriversManagementComponent implements OnInit {
 
   backToList() {
     this.selectedDriver = null;
+  }
+
+  openImageModal(
+    imageUrl: string,
+    title: string
+  ) {
+    this.selectedImageUrl = imageUrl;
+    this.selectedImageTitle = title;
+    this.showImageModal = true;
+  }
+
+  closeImageModal() {
+    this.showImageModal = false;
+    this.selectedImageUrl = '';
+    this.selectedImageTitle = '';
   }
 
   getEmptyDriverForm(): DriverRequest {
@@ -119,10 +135,21 @@ export class DriversManagementComponent implements OnInit {
       ci_front_photo_url: '',
       ci_back_photo_url: '',
       electricity_bill_photo_url: '',
+      criminal_record_pdf_url: '',
       status: 'active',
 
       vehicle_id: null
     };
+  }
+  onCriminalRecordSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+
+    if (!input.files || input.files.length === 0) {
+      this.selectedCriminalRecordFile = null;
+      return;
+    }
+
+    this.selectedCriminalRecordFile = input.files[0];
   }
 
   loadDrivers() {
@@ -316,24 +343,15 @@ export class DriversManagementComponent implements OnInit {
     );
   }
 
-  getVehicleAssignedDrivers(vehicleId: number): number[] {
-    const shiftDriverIds = this.shifts
-      .filter(shift =>
-        Number(shift.vehicle_id) === Number(vehicleId) &&
-        shift.driver_id !== null &&
-        shift.driver_id !== undefined &&
-        Number(shift.is_active) === 1
-      )
-      .map(shift => Number(shift.driver_id));
+ getVehicleAssignedDrivers(vehicleId: number): number[] {
 
-    const directDriverIds = this.drivers
+    return this.drivers
       .filter(driver =>
         Number(driver.vehicle_id) === Number(vehicleId) &&
-        driver.status !== 'inactive'
+        driver.status === 'active'
       )
       .map(driver => Number(driver.id));
 
-    return [...new Set([...shiftDriverIds, ...directDriverIds])];
   }
 
   handleEdit(driver: Driver) {
@@ -360,7 +378,7 @@ export class DriversManagementComponent implements OnInit {
       ci_front_photo_url: driver.ci_front_photo_url,
       ci_back_photo_url: driver.ci_back_photo_url,
       electricity_bill_photo_url: driver.electricity_bill_photo_url,
-
+      criminal_record_pdf_url: driver.criminal_record_pdf_url,
       status: driver.status,
 
       vehicle_id: driver.vehicle_id
@@ -427,7 +445,7 @@ export class DriversManagementComponent implements OnInit {
       ci_front_photo_url: driver.ci_front_photo_url,
       ci_back_photo_url: driver.ci_back_photo_url,
       electricity_bill_photo_url: driver.electricity_bill_photo_url,
-
+      criminal_record_pdf_url: driver.criminal_record_pdf_url,
       status: newStatus,
 
       vehicle_id: driver.vehicle_id
@@ -574,6 +592,12 @@ export class DriversManagementComponent implements OnInit {
       ).subscribe({
         next: (driver) => {
           this.uploadPhotoAfterSave(driver.id);
+
+          if (driver.vehicle_id) {
+            this.pendingShiftDriver = driver;
+            this.pendingShiftVehicleId = driver.vehicle_id;
+            this.showStartShiftModal = true;
+          }
         },
         error: (error) => {
           console.error('Error al actualizar:', error);
@@ -587,6 +611,12 @@ export class DriversManagementComponent implements OnInit {
       ).subscribe({
         next: (driver) => {
           this.uploadPhotoAfterSave(driver.id);
+
+          if (driver.vehicle_id) {
+            this.pendingShiftDriver = driver;
+            this.pendingShiftVehicleId = driver.vehicle_id;
+            this.showStartShiftModal = true;
+          }
         },
         error: (error) => {
           console.error('Error al guardar:', error);
@@ -597,9 +627,7 @@ export class DriversManagementComponent implements OnInit {
   }
 
   async uploadPhotoAfterSave(driverId: number) {
-
     try {
-
       if (this.selectedPhotoFile) {
         await this.driverService
           .uploadDriverPhoto(driverId, this.selectedPhotoFile)
@@ -646,11 +674,19 @@ export class DriversManagementComponent implements OnInit {
           .toPromise();
       }
 
+      if (this.selectedCriminalRecordFile) {
+        await this.driverService
+          .uploadCriminalRecord(
+            driverId,
+            this.selectedCriminalRecordFile
+          )
+          .toPromise();
+      }
+
       this.closeModal();
-      this.loadDrivers();
+      this.refreshDriversAndSelected();
 
     } catch (error) {
-
       console.error(error);
 
       alert(
@@ -658,9 +694,27 @@ export class DriversManagementComponent implements OnInit {
       );
 
       this.closeModal();
-      this.loadDrivers();
+      this.refreshDriversAndSelected();
     }
-  }  
+  }
+
+  refreshDriversAndSelected() {
+    this.driverService.getDrivers().subscribe({
+      next: (data) => {
+        this.drivers = data;
+
+        if (this.selectedDriver) {
+          this.selectedDriver =
+            this.drivers.find(
+              driver => driver.id === this.selectedDriver?.id
+            ) || null;
+        }
+      },
+      error: (error) => {
+        console.error('Error al recargar conductores:', error);
+      }
+    });
+  }
 
   openNewDriverForm() {
     this.editingDriver = null;
@@ -671,6 +725,51 @@ export class DriversManagementComponent implements OnInit {
     this.selectedCiFrontFile = null;
     this.selectedCiBackFile = null;
     this.selectedElectricityBillFile = null;
+  }
+
+  closeStartShiftModal() {
+    this.showStartShiftModal = false;
+    this.pendingShiftDriver = null;
+    this.pendingShiftVehicleId = null;
+  }
+
+  confirmStartShiftToday() {
+    if (!this.pendingShiftDriver || !this.pendingShiftVehicleId) {
+      return;
+    }
+
+    const vehicle = this.vehicles.find(
+      v => Number(v.id) === Number(this.pendingShiftVehicleId)
+    );
+
+    if (!vehicle) {
+      alert('Vehículo no encontrado');
+      return;
+    }
+
+    const assignedDriverIds = this.getVehicleAssignedDrivers(
+      this.pendingShiftVehicleId
+    );
+
+    const today = new Date().toISOString().split('T')[0];
+
+    this.shiftDayService.programShiftDays({
+      vehicle_id: this.pendingShiftVehicleId,
+      driver_ids: assignedDriverIds,
+      start_date: today,
+      days_to_generate: 30
+    }).subscribe({
+      next: () => {
+        alert('Rol de turnos programado correctamente');
+        this.closeStartShiftModal();
+        this.loadDrivers();
+        this.loadVehicles();
+      },
+      error: (error) => {
+        console.error('Error al programar turnos:', error);
+        alert('No se pudo programar el rol de turnos');
+      }
+    });
   }
 
   closeModal() {

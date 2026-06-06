@@ -36,6 +36,11 @@ import {
   AlertRequest
 } from '../../../../services/alert.service';
 
+import {
+  ShiftDayService,
+  ShiftDay
+} from '../../../../services/shift-day.service';
+
 @Component({
   selector: 'app-vehicles-management',
   standalone: true,
@@ -49,31 +54,23 @@ export class VehiclesManagementComponent implements OnInit {
   owners: Owner[] = [];
   shifts: Shift[] = [];
   drivers: Driver[] = [];
-
+  shiftDays: ShiftDay[] = [];
   showForm = false;
   showNewHistoryForm = false;
-
   editingVehicle: Vehicle | null = null;
   editingHistory: VehicleHistory | null = null;
-
   selectedVehicle: Vehicle | null = null;
   selectedPhotoFile: File | null = null;
-
   historyMode: 'completed' | 'scheduled' = 'completed';
-
   historyIsRecurring = false;
   historyRecurrenceValue: number | null = null;
   historyRecurrenceUnit: string | null = null;
-
   searchTerm = '';
   activeDetailTab = 'general';
-
   historySearchTerm = '';
   historyDriverFilter = '';
   historyDateFilter = '';
-
   vehicleHistory: VehicleHistory[] = [];
-
   maintenanceCategories = [
     'mantenimiento_general',
     'accidente',
@@ -96,7 +93,8 @@ export class VehiclesManagementComponent implements OnInit {
     private ownerService: OwnerService,
     private shiftService: ShiftService,
     private driverService: DriverService,
-    private alertService: AlertService
+    private alertService: AlertService,
+    private shiftDayService: ShiftDayService
   ) {}
 
   ngOnInit() {
@@ -104,6 +102,7 @@ export class VehiclesManagementComponent implements OnInit {
     this.loadOwners();
     this.loadShifts();
     this.loadDrivers();
+    this.loadShiftDays();
   }
 
   getEmptyVehicleForm(): VehicleRequest {
@@ -158,6 +157,17 @@ export class VehiclesManagementComponent implements OnInit {
   onCompanyNameChange() {
     this.vehicleForm.company_name =
       (this.vehicleForm.company_name || '').toUpperCase();
+  }
+
+  loadShiftDays() {
+    this.shiftDayService.getShiftDays().subscribe({
+      next: (data) => {
+        this.shiftDays = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar turnos diarios:', error);
+      }
+    });
   }
 
   loadVehicles() {
@@ -851,11 +861,16 @@ if (isAccident) {
     this.vehicleService.activateVehicle(vehicle.id).subscribe({
       next: () => {
         this.loadVehicles();
+        this.loadDrivers();
+        this.loadShiftDays();
+
+        this.selectedVehicle = null;
       },
       error: (error) => {
         console.error('Error al reactivar:', error);
         alert('No se pudo reactivar el vehículo');
       }
+      
     });
   }
 
@@ -965,7 +980,9 @@ assignDriverByAccidentDate() {
     }
 
     const shiftStartDate = shift.start_time.split('T')[0];
-    const shiftEndDate = shift.end_time.split('T')[0];
+    const shiftEndDate = shift.end_time
+      ? shift.end_time.split('T')[0]
+      : '2099-12-31';
 
     return accidentDate >= shiftStartDate && accidentDate <= shiftEndDate;
   });
@@ -1025,54 +1042,45 @@ assignDriverByAccidentDate() {
     if (vehicle.management_status !== 'active') {
       return null;
     }
-    const activeShifts = this.shifts
-      .filter(shift =>
-        Number(shift.vehicle_id) === Number(vehicle.id) &&
-        shift.driver_id !== null &&
-        shift.driver_id !== undefined &&
-        Number(shift.is_active) === 1
-      )
-      .filter(shift => {
-        const driver = this.drivers.find(driver =>
-          Number(driver.id) === Number(shift.driver_id)
-        );
 
-        return driver?.status === 'active';
-      })
-      .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
+    const today = new Date().toISOString().split('T')[0];
 
-    if (activeShifts.length === 0) {
-      if (vehicle.management_type === 'relevos') {
-        return null;
-      }
-
-      const directDriver = this.drivers.find(driver =>
-        Number(driver.vehicle_id) === Number(vehicle.id) &&
-        driver.status === 'active'
-      );
-
-      return directDriver?.id || null;
-    }
-
-    if (vehicle.management_type === 'solo') {
-      return activeShifts[0].driver_id;
-    }
-
-    const firstShiftDate = activeShifts[0].start_time.split('T')[0];
-
-    const start = new Date(firstShiftDate + 'T00:00:00');
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.floor(
-      (today.getTime() - start.getTime()) /
-      (1000 * 60 * 60 * 24)
+    const todayShift = this.shiftDays.find(day =>
+      Number(day.vehicle_id) === Number(vehicle.id) &&
+      day.shift_date === today
     );
 
-    const index = Math.abs(diffDays) % activeShifts.length;
+    if (!todayShift || !todayShift.driver_id) {
+      return null;
+    }
 
-    return activeShifts[index]?.driver_id || null;
+    const driver = this.drivers.find(driver =>
+      Number(driver.id) === Number(todayShift.driver_id) &&
+      driver.status === 'active' &&
+      Number(driver.vehicle_id) === Number(vehicle.id)
+    );
+
+    return driver ? driver.id : null;
+  }
+
+  getDaysBetween(startDateValue: string, endDate: Date): number {
+    const parts = startDateValue.split('-');
+
+    const startDate = new Date(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2])
+    );
+
+    startDate.setHours(0, 0, 0, 0);
+
+    const today = new Date(endDate);
+    today.setHours(0, 0, 0, 0);
+
+    return Math.floor(
+      (today.getTime() - startDate.getTime()) /
+      (1000 * 60 * 60 * 24)
+    );
   }
 
   get selectedVehicleDriverAssignmentHistory() {

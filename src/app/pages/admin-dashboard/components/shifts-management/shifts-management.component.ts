@@ -171,34 +171,18 @@ shiftForm: ShiftRequest = {
   }
 
   getTodayDriver(vehicle: Vehicle): string {
-    const activeShifts = this.shifts
-      .filter(shift =>
-        Number(shift.vehicle_id) === Number(vehicle.id) &&
-        Number(shift.is_active) === 1
-      )
-      .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
+    const today = new Date().toISOString().split('T')[0];
 
-    if (activeShifts.length === 0) {
+    const todayShift = this.shiftDays.find(day =>
+      Number(day.vehicle_id) === Number(vehicle.id) &&
+      day.shift_date === today
+    );
+
+    if (!todayShift || !todayShift.driver_id) {
       return 'Sin conductor de turno';
     }
 
-    if (vehicle.management_type === 'solo') {
-      return this.getDriverName(activeShifts[0].driver_id);
-    }
-
-    const startDate = new Date(activeShifts[0].start_time);
-    const today = new Date();
-
-    startDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.floor(
-      (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
-    const index = Math.abs(diffDays) % activeShifts.length;
-
-    return this.getDriverName(activeShifts[index].driver_id);
+    return this.getDriverName(todayShift.driver_id);
   }
 
   openNewShiftForm() {
@@ -259,66 +243,34 @@ shiftForm: ShiftRequest = {
       return;
     }
 
-    if (
-      this.selectedVehicle.management_type === 'relevos' &&
-      !this.driverTwoId
-    ) {
-      alert('Debe seleccionar el segundo conductor para vehículos por relevos');
-      return;
-    }
-
-    if (
-      this.selectedVehicle.management_type === 'relevos' &&
-      this.driverOneId === this.driverTwoId
-    ) {
-      alert('Los dos conductores no pueden ser el mismo');
-      return;
-    }
-
-    const startTime = `${this.shiftStartDate}T00:00:00`;
-    const endTime = '2099-12-31T23:59:59';
-
-    const requests: ShiftRequest[] = [
-      {
-        driver_id: this.driverOneId,
-        vehicle_id: this.shiftForm.vehicle_id,
-        start_time: startTime,
-        end_time: endTime,
-        status: 'active',
-        turn_order: 1,
-        is_active: 1
-      }
-    ];
+    const driverIds: number[] = [this.driverOneId];
 
     if (this.selectedVehicle.management_type === 'relevos') {
-      requests.push({
-        driver_id: this.driverTwoId,
-        vehicle_id: this.shiftForm.vehicle_id,
-        start_time: startTime,
-        end_time: endTime,
-        status: 'active',
-        turn_order: 2,
-        is_active: 1
-      });
+      if (this.driverTwoId && this.driverTwoId === this.driverOneId) {
+        alert('Los dos conductores no pueden ser el mismo');
+        return;
+      }
+
+      if (this.driverTwoId) {
+        driverIds.push(this.driverTwoId);
+      }
     }
 
-    let completed = 0;
-
-    requests.forEach(request => {
-      this.shiftService.createShift(request).subscribe({
-        next: () => {
-          completed++;
-
-          if (completed === requests.length) {
-            this.closeModal();
-            this.loadShifts();
-          }
-        },
-        error: (error) => {
-          console.error('Error al guardar relevo:', error);
-          alert('No se pudo guardar el relevo');
-        }
-      });
+    this.shiftDayService.programShiftDays({
+      vehicle_id: this.shiftForm.vehicle_id,
+      driver_ids: driverIds,
+      start_date: this.shiftStartDate,
+      days_to_generate: 30
+    }).subscribe({
+      next: () => {
+        alert('Rol de turnos programado correctamente');
+        this.closeModal();
+        this.loadShiftDays();
+      },
+      error: (error) => {
+        console.error('Error al programar rol:', error);
+        alert('No se pudo programar el rol de turnos');
+      }
     });
   }
 
@@ -371,12 +323,9 @@ shiftForm: ShiftRequest = {
 
   get vehiclesWithCurrentDrivers() {
     return this.vehicles.map(vehicle => {
-      const activeShifts = this.shifts
-        .filter(shift =>
-          Number(shift.vehicle_id) === Number(vehicle.id) &&
-          Number(shift.is_active) === 1
-        )
-        .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
+      const activeShifts = this.shiftDays.filter(day =>
+        Number(day.vehicle_id) === Number(vehicle.id)
+      );
 
       return {
         vehicle,
@@ -424,36 +373,13 @@ shiftForm: ShiftRequest = {
     );
   }
 
-  getAutomaticDriverForDate(vehicle: Vehicle, date: string): number | null {
-    const activeShifts = this.shifts
-      .filter(shift =>
-        Number(shift.vehicle_id) === Number(vehicle.id) &&
-        Number(shift.is_active) === 1
-      )
-      .sort((a, b) => Number(a.turn_order) - Number(b.turn_order));
-
-    if (activeShifts.length === 0) {
-      return null;
-    }
-
-    if (vehicle.management_type === 'solo') {
-      return activeShifts[0].driver_id;
-    }
-
-    const startDate = new Date(activeShifts[0].start_time);
-    const currentDate = new Date(date);
-
-    startDate.setHours(0, 0, 0, 0);
-    currentDate.setHours(0, 0, 0, 0);
-
-    const diffDays = Math.floor(
-      (currentDate.getTime() - startDate.getTime()) /
-      (1000 * 60 * 60 * 24)
+ getAutomaticDriverForDate(vehicle: Vehicle, date: string): number | null {
+    const day = this.shiftDays.find(item =>
+      Number(item.vehicle_id) === Number(vehicle.id) &&
+      item.shift_date === date
     );
 
-    const index = Math.abs(diffDays) % activeShifts.length;
-
-    return activeShifts[index].driver_id;
+    return day?.driver_id || null;
   }
 
   getDriverForDate(vehicle: Vehicle, date: string): number | null {

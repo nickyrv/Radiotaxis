@@ -266,9 +266,11 @@
 
             <p class="text-gray-900 font-medium">
               {{
-                selectedVehicle.management_status !== 'active'
-                  ? 'Vehículo dado de baja'
-                  : getDriverNameById(getTodayDriverId(selectedVehicle))
+                getTodayDriverId(selectedVehicle)
+                  ? getDriverNameById(getTodayDriverId(selectedVehicle))
+                  : selectedVehicle.management_type === 'relevos'
+                    ? 'Hoy sin relevo asignado'
+                    : 'Sin chofer de turno'
               }}
             </p>
           </div>

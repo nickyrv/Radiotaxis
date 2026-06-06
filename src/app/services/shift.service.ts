@@ -12,7 +12,7 @@ export interface Shift {
 
   start_time: string;
 
-  end_time: string;
+  end_time: string | null;
 
   status: string;
 
@@ -29,7 +29,7 @@ export interface ShiftRequest {
 
   start_time: string;
 
-  end_time: string;
+  end_time: string | null;
 
   status: string;
 

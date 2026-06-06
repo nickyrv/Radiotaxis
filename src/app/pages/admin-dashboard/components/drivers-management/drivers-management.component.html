@@ -356,8 +356,155 @@
       </div>
 
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="lg:col-span-3 bg-white rounded-xl border border-gray-200 p-6">
 
+      <h2 class="text-xl font-semibold text-gray-900 mb-6">
+        Documentos del conductor
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <div>
+          <p class="text-sm text-gray-500 mb-2">
+            Puerta de casa
+          </p>
+
+          <img
+            *ngIf="selectedDriver.house_door_photo_url"
+            [src]="selectedDriver.house_door_photo_url"
+            (click)="openImageModal(
+              selectedDriver.house_door_photo_url,
+              'Puerta de casa'
+            )"
+            class="w-full h-40 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
+          />
+
+          <p
+            *ngIf="!selectedDriver.house_door_photo_url"
+            class="text-gray-400"
+          >
+            Sin imagen
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 mb-2">
+            CI anverso
+          </p>
+          
+          <img
+            *ngIf="selectedDriver.ci_front_photo_url"
+            [src]="selectedDriver.ci_front_photo_url"
+            (click)="openImageModal(
+              selectedDriver.ci_front_photo_url,
+              'Anverso del Carnet de Identidad'
+            )"
+            class="w-full h-40 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
+          />
+
+          <p
+            *ngIf="!selectedDriver.ci_front_photo_url"
+            class="text-gray-400"
+          >
+            Sin imagen
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 mb-2">
+            CI reverso
+          </p>
+          
+          <img
+            *ngIf="selectedDriver.ci_back_photo_url"
+            [src]="selectedDriver.ci_back_photo_url"
+            (click)="openImageModal(
+              selectedDriver.ci_back_photo_url,
+              'Reverso del Carnet de Identidad'
+            )"
+            class="w-full h-40 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
+          /> 
+          
+          <p
+            *ngIf="!selectedDriver.ci_back_photo_url"
+            class="text-gray-400"
+          >
+            Sin imagen
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500 mb-2">
+            Factura de luz
+          </p>
+
+          <img
+            *ngIf="selectedDriver.electricity_bill_photo_url"
+            [src]="selectedDriver.electricity_bill_photo_url"
+            (click)="openImageModal(
+              selectedDriver.electricity_bill_photo_url,
+              'Factura de luz'
+            )"
+            class="w-full h-40 object-cover rounded-lg border cursor-pointer hover:scale-105 transition"
+          />
+
+          <p
+            *ngIf="!selectedDriver.electricity_bill_photo_url"
+            class="text-gray-400"
+          >
+            Sin imagen
+          </p>
+        </div> 
+
+        <div>
+
+            <p class="text-sm text-gray-500 mb-2">
+
+              Antecedentes penales
+
+            </p>
+
+
+
+            <a
+
+              *ngIf="selectedDriver?.criminal_record_pdf_url"
+
+              [href]="selectedDriver?.criminal_record_pdf_url"
+
+              target="_blank"
+
+              class="mt-2 px-3 py-1 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
+
+            >
+
+              Ver PDF
+
+            </a>
+
+
+
+            <p
+
+              *ngIf="!selectedDriver?.criminal_record_pdf_url"
+
+              class="text-gray-400"
+
+            >
+
+              Sin documento
+
+            </p>
+
+          </div>
+
+        
+
+      </div>
+
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+    
   <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
 
     <h2 class="text-xl font-semibold text-gray-900">
@@ -397,7 +544,7 @@
     </div>
 
   </div>
-
+  
   <div class="overflow-x-auto">
 
     <table class="w-full">
@@ -640,6 +787,40 @@
             </p>
           </div>
 
+          
+
+          <div>
+
+          <label class="block text-gray-700 mb-2">
+
+            Certificado de antecedentes penales (PDF)
+
+          </label>
+
+
+
+          <input
+
+            type="file"
+
+            accept=".pdf"
+
+            (change)="onCriminalRecordSelected($event)"
+
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
+
+          />
+
+
+
+          <p class="text-xs text-gray-500 mt-1">
+
+            Solo se permiten archivos PDF.
+
+          </p>
+
+        </div>
+
         </div>
 
       </div>
@@ -861,4 +1042,74 @@
 
   </div>
 
+</div>
+
+<!-- MODAL VISOR DE IMAGEN -->
+
+<div
+  *ngIf="showImageModal"
+  class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[9999]"
+  (click)="closeImageModal()"
+>
+
+  <div
+    class="relative w-[95vw] h-[90vh] flex flex-col items-center justify-center"
+    (click)="$event.stopPropagation()"
+  >
+
+    <button
+      type="button"
+      (click)="closeImageModal()"
+      class="absolute -top-12 right-0 text-white text-3xl"
+    >
+      ✕
+    </button>
+
+    <h3 class="text-white text-center mb-4 text-lg font-semibold">
+      {{ selectedImageTitle }}
+    </h3>
+
+    <img
+      [src]="selectedImageUrl"
+      class="w-auto h-auto max-w-[95vw] max-h-[85vh] object-contain rounded-lg shadow-2xl"
+    />
+
+  </div>
+
+</div>
+
+<div
+  *ngIf="showStartShiftModal && pendingShiftDriver"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]"
+>
+  <div class="bg-white rounded-lg max-w-md w-full p-6">
+
+    <h2 class="text-xl font-bold text-gray-900 mb-3">
+      Iniciar turno
+    </h2>
+
+    <p class="text-gray-600 mb-6">
+      El conductor {{ pendingShiftDriver.name }} fue asignado al vehículo.
+      ¿Desea programar el rol de turnos desde hoy?
+    </p>
+
+    <div class="flex justify-end gap-3">
+      <button
+        type="button"
+        (click)="closeStartShiftModal()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        No, solo asignar
+      </button>
+
+      <button
+        type="button"
+        (click)="confirmStartShiftToday()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        Sí, programar desde hoy
+      </button>
+    </div>
+
+  </div>
 </div>

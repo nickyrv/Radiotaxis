@@ -8,7 +8,7 @@ export interface ShiftDay {
 
   vehicle_id: number;
 
-  driver_id: number;
+  driver_id: number | null;
 
   shift_date: string;
 
@@ -23,13 +23,20 @@ export interface ShiftDayRequest {
 
   vehicle_id: number;
 
-  driver_id: number;
+  driver_id: number | null;
 
   shift_date: string;
 
   source?: string;
 
   notes?: string | null;
+}
+
+export interface ProgramShiftDaysRequest {
+  vehicle_id: number;
+  driver_ids: number[];
+  start_date: string;
+  days_to_generate?: number;
 }
 
 @Injectable({
@@ -56,6 +63,15 @@ export class ShiftDayService {
 
     return this.http.get<ShiftDay[]>(
       `${this.apiUrl}vehicle/${vehicleId}`
+    );
+  }
+
+  programShiftDays(
+    data: ProgramShiftDaysRequest
+  ): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}program`,
+      data
     );
   }
 
