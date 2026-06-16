@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import {
   PaymentService,
@@ -81,7 +82,8 @@ export class DriverDashboardComponent implements OnInit {
     event_date: '',
     cost: null,
     description: '',
-    maintenance_status: 'pending'
+    maintenance_status: 'pending',
+    completed_date: null
   };
 
   constructor(
@@ -89,7 +91,8 @@ export class DriverDashboardComponent implements OnInit {
     private shiftService: ShiftService,
     private vehicleService: VehicleService,
     private driverService: DriverService,
-    private vehicleHistoryService: VehicleHistoryService
+    private vehicleHistoryService: VehicleHistoryService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -226,7 +229,9 @@ export class DriverDashboardComponent implements OnInit {
       event_date: today,
       cost: null,
       description: '',
-      maintenance_status: 'pending'
+      maintenance_status: 'pending',
+      completed_date: null
+      
     };
 
     this.showIncidentForm = true;
@@ -297,6 +302,15 @@ export class DriverDashboardComponent implements OnInit {
 
   formatDateTime(date: string) {
     return new Date(date).toLocaleString('es-ES');
+  }
+
+  logout() {
+    localStorage.clear();
+
+    this.router.navigate(
+      ['/login'],
+      { replaceUrl: true }
+    );
   }
 
 }

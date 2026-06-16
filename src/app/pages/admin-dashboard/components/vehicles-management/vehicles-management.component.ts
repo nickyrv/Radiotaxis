@@ -150,7 +150,8 @@ export class VehiclesManagementComponent implements OnInit {
 
       description: '',
 
-      maintenance_status: 'pending'
+      maintenance_status: 'pending',
+      completed_date: null
     };
   }
 
@@ -306,6 +307,8 @@ export class VehiclesManagementComponent implements OnInit {
 
     if (this.activeDetailTab === 'accidentes') {
       this.historyForm.category = 'accidente';
+      this.historyForm.maintenance_status = 'accident_low';
+      this.historyMode = 'completed';
     }
 
     this.historyMode = 'completed';
@@ -328,7 +331,8 @@ export class VehiclesManagementComponent implements OnInit {
       cost: history.cost,
       description: history.description,
       maintenance_status:
-      history.maintenance_status || 'pending'
+      history.maintenance_status || 'pending',
+      completed_date: history.completed_date || null
     };
 
     this.showNewHistoryForm = true;
@@ -362,6 +366,7 @@ if (isAccident) {
   }
 
   this.historyForm.cost = null;
+  this.historyForm.maintenance_status = 'accident_reported';
 }
 
   if (!isAccident) {
@@ -382,7 +387,7 @@ if (isAccident) {
     this.historyForm.cost = null;
   }
 
-  if (this.historyMode === 'scheduled') {
+  if (this.historyMode === 'scheduled' && !isAccident) {
     const alertPayload: AlertRequest = {
       title: this.historyForm.detail || 'Mantenimiento programado',
       description: this.historyForm.description,
@@ -964,43 +969,56 @@ if (isAccident) {
         return category;
     }
   }
-assignDriverByAccidentDate() {
-  if (!this.selectedVehicle || !this.historyForm.event_date) {
-    return;
+
+  formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
   }
 
-  const accidentDate = this.historyForm.event_date;
+  getTodayLocalDate(): string {
+    return this.formatLocalDate(new Date());
+  }
 
-  const shiftFound = this.shifts.find(shift => {
-    if (
-      Number(shift.vehicle_id) !== Number(this.selectedVehicle?.id) ||
-      Number(shift.is_active) !== 1
-    ) {
-      return false;
+  assignDriverByAccidentDate() {
+    if (!this.selectedVehicle || !this.historyForm.event_date) {
+      return;
     }
 
-    const shiftStartDate = shift.start_time.split('T')[0];
-    const shiftEndDate = shift.end_time
-      ? shift.end_time.split('T')[0]
-      : '2099-12-31';
+    const accidentDate = this.historyForm.event_date;
 
-    return accidentDate >= shiftStartDate && accidentDate <= shiftEndDate;
-  });
+    const shiftFound = this.shifts.find(shift => {
+      if (
+        Number(shift.vehicle_id) !== Number(this.selectedVehicle?.id) ||
+        Number(shift.is_active) !== 1
+      ) {
+        return false;
+      }
 
-  if (shiftFound?.driver_id) {
-    this.historyForm.driver_id = Number(shiftFound.driver_id);
-    return;
+      const shiftStartDate = shift.start_time.split('T')[0];
+      const shiftEndDate = shift.end_time
+        ? shift.end_time.split('T')[0]
+        : '2099-12-31';
+
+      return accidentDate >= shiftStartDate && accidentDate <= shiftEndDate;
+    });
+
+    if (shiftFound?.driver_id) {
+      this.historyForm.driver_id = Number(shiftFound.driver_id);
+      return;
+    }
+
+    const todayDriverId = this.getTodayDriverId(this.selectedVehicle);
+
+    if (todayDriverId) {
+      this.historyForm.driver_id = Number(todayDriverId);
+      return;
+    }
+
+    this.historyForm.driver_id = this.selectedVehicle.current_driver_id || null;
   }
-
-  const todayDriverId = this.getTodayDriverId(this.selectedVehicle);
-
-  if (todayDriverId) {
-    this.historyForm.driver_id = Number(todayDriverId);
-    return;
-  }
-
-  this.historyForm.driver_id = this.selectedVehicle.current_driver_id || null;
-}
 
   getVehicleAssignedDrivers(vehicleId: number): number[] {
     const shiftDriverIds = this.shifts
@@ -1088,34 +1106,43 @@ assignDriverByAccidentDate() {
       return [];
     }
 
-    const directDrivers = this.drivers
+    const vehicleId = Number(this.selectedVehicle.id);
+
+    const shiftHistory = this.shifts
+      .filter(shift =>
+        Number(shift.vehicle_id) === vehicleId &&
+        shift.driver_id !== null
+      )
+      .map(shift => {
+        const isActive = Number(shift.is_active) === 1;
+
+        return {
+          driver: this.drivers.find(driver =>
+            Number(driver.id) === Number(shift.driver_id)
+          ),
+          start_date: shift.start_time,
+          end_date: isActive ? null : shift.end_time,
+          status: isActive ? 'Actual' : 'Finalizado'
+        };
+      })
+      .filter(item => !!item.driver);
+
+    const currentDrivers = this.drivers
       .filter(driver =>
-        Number(driver.vehicle_id) === Number(this.selectedVehicle?.id) &&
-        driver.status !== 'inactive'
+        Number(driver.vehicle_id) === vehicleId &&
+        driver.status === 'active' &&
+        !shiftHistory.some(item =>
+          Number(item.driver?.id) === Number(driver.id)
+        )
       )
       .map(driver => ({
         driver,
-        start_date: this.selectedVehicle?.registration_date || null,
+        start_date: this.getTodayLocalDate(),
         end_date: null,
         status: 'Actual'
       }));
 
-    const shiftDrivers = this.shifts
-      .filter(shift =>
-        Number(shift.vehicle_id) === Number(this.selectedVehicle?.id) &&
-        shift.driver_id !== null
-      )
-      .map(shift => ({
-        driver: this.drivers.find(driver =>
-          Number(driver.id) === Number(shift.driver_id)
-        ),
-        start_date: shift.start_time,
-        end_date: Number(shift.is_active) === 1 ? null : shift.end_time,
-        status: Number(shift.is_active) === 1 ? 'Actual' : 'Finalizado'
-      }))
-      .filter(item => !!item.driver);
-
-    return [...directDrivers, ...shiftDrivers];
+    return [...currentDrivers, ...shiftHistory];
   }
 
   getRestrictionDayFromPlate(plate: string): string {

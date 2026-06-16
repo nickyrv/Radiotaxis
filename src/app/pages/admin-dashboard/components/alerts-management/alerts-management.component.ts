@@ -90,7 +90,8 @@ export class AlertsManagementComponent implements OnInit {
     event_date: history.event_date,
     cost: history.cost,
     description: history.description,
-    maintenance_status: 'completed'
+    maintenance_status: 'completed',
+    completed_date: this.getTodayLocalDate()
   };
 
   this.vehicleHistoryService.updateHistory(
@@ -98,6 +99,8 @@ export class AlertsManagementComponent implements OnInit {
     updatedHistory
   ).subscribe({
     next: () => {
+      this.closeHistoryCompleteModal();
+
       this.loadVehicleHistory();
     },
     error: (error) => {
@@ -116,7 +119,8 @@ markHistoryCancelled(history: VehicleHistory) {
     event_date: history.event_date,
     cost: history.cost,
     description: history.description,
-    maintenance_status: 'cancelled'
+    maintenance_status: 'cancelled',
+    completed_date: null
   };
 
   this.vehicleHistoryService.updateHistory(
@@ -211,10 +215,12 @@ markHistoryCancelled(history: VehicleHistory) {
       detail: this.selectedHistoryToComplete.detail,
       event_date: this.selectedHistoryToComplete.event_date,
       cost: this.historyCompleteForm.cost,
-      description:
-        this.historyCompleteForm.notes ||
-        this.selectedHistoryToComplete.description,
-      maintenance_status: 'completed'
+      
+      description: this.cleanHistoryDescription(
+        this.selectedHistoryToComplete.description
+      ),
+      maintenance_status: 'completed',
+      completed_date: this.getTodayLocalDate()
     };
 
     this.vehicleHistoryService.updateHistory(
@@ -236,6 +242,34 @@ markHistoryCancelled(history: VehicleHistory) {
 
       }
     });
+  }
+
+  getTodayLocalDate(): string {
+    const today = new Date();
+
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  getCompletedHistoryLabel(history: VehicleHistory): string {
+    const days = this.getDaysUntil(history.event_date);
+
+    if (days !== null && days < 0) {
+      return `Realizada con atraso de ${Math.abs(days)} día(s)`;
+    }
+
+    if (days === 0) {
+      return 'Realizada en fecha límite';
+    }
+
+    if (days !== null && days > 0) {
+      return `Realizada ${days} día(s) antes del vencimiento`;
+    }
+
+    return 'Realizada';
   }
 
   getEmptyAlertForm(): AlertRequest {
@@ -278,6 +312,10 @@ completeForm = {
   selectVehicle(vehicle: Vehicle) {
     this.selectedVehicle = vehicle;
     this.selectedDriver = null;
+
+    this.searchTerm = '';
+    this.categoryFilter = '';
+    this.statusFilter = '';
   }
 
   selectDriver(driver: Driver) {
@@ -288,6 +326,10 @@ completeForm = {
   backToCards() {
     this.selectedVehicle = null;
     this.selectedDriver = null;
+
+    this.searchTerm = '';
+    this.categoryFilter = '';
+    this.statusFilter = '';
   }
 
   setSection(section: 'vehicles' | 'drivers') {
@@ -378,6 +420,58 @@ completeForm = {
     ).length;
   }
 
+  cleanHistoryDescription(description: string | null): string {
+    if (!description) {
+      return '';
+    }
+
+    return description
+      .replace(/Realizado en fecha:\s*\d{4}-\d{2}-\d{2}/g, '')
+      .replace(/Observación:\s*[^R]*/g, '')
+      .trim();
+  }
+  get availableHistoryCategories(): string[] {
+    const categories = this.vehicleHistory
+      .map(history => history.category)
+      .filter((category): category is string =>
+        !!category && category.trim() !== ''
+      );
+
+    return [...new Set(categories)];
+  }
+
+  getFilteredHistoryForSelectedVehicle(): VehicleHistory[] {
+    if (!this.selectedVehicle) {
+      return [];
+    }
+
+    return this.getVehicleHistoryAlerts(this.selectedVehicle.id)
+      .filter(history => {
+        const search = this.searchTerm.toLowerCase();
+
+        const matchesSearch =
+          !this.searchTerm ||
+          (history.detail || '').toLowerCase().includes(search) ||
+          (history.description || '').toLowerCase().includes(search) ||
+          (history.category || '').toLowerCase().includes(search);
+
+        const matchesCategory =
+          !this.categoryFilter ||
+          (history.category || '').toLowerCase().trim() ===
+          this.categoryFilter.toLowerCase().trim();
+
+        const calculatedStatus =
+          this.getCalculatedSeverityForAny(history);
+
+        const matchesStatus =
+          !this.statusFilter ||
+          history.maintenance_status === this.statusFilter ||
+          calculatedStatus === this.statusFilter;
+
+        return matchesSearch && matchesCategory && matchesStatus;
+      });
+  }
+
   getDriverName(driverId: number | null): string {
     if (!driverId) return 'Sin conductor';
 
@@ -388,8 +482,58 @@ completeForm = {
     return driver?.name || 'Conductor no encontrado';
   }
 
+  confirmReopenHistory(history: VehicleHistory) {
+    const confirmed = confirm(
+      '¿Desea cambiar este mantenimiento realizado nuevamente a pendiente? Use esta opción solo si fue marcado por error.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const updatedHistory = {
+      vehicle_id: history.vehicle_id,
+      driver_id: history.driver_id,
+      category: history.category,
+      detail: history.detail,
+      event_date: history.event_date,
+      cost: history.cost,
+      description: history.description,
+      maintenance_status: 'pending',
+      completed_date: null
+    };
+
+    this.vehicleHistoryService.updateHistory(
+      history.id,
+      updatedHistory
+    ).subscribe({
+      next: () => {
+        this.loadVehicleHistory();
+      },
+      error: (error) => {
+        console.error('Error al corregir estado:', error);
+        alert('No se pudo corregir el estado');
+      }
+    });
+  }
+
   getHistoryStatusLabel(history: VehicleHistory): string {
+
     if (history.maintenance_status === 'completed') {
+      const days = this.getDaysUntil(history.event_date);
+
+      if (days !== null && days < 0) {
+        return `Realizada con ${Math.abs(days)} día(s) de atraso`;
+      }
+
+      if (days === 0) {
+        return 'Realizada en fecha límite';
+      }
+
+      if (days !== null && days > 0) {
+        return `Realizada ${days} día(s) antes del vencimiento`;
+      }
+
       return 'Realizada';
     }
 
@@ -400,10 +544,7 @@ completeForm = {
     const days = this.getDaysUntil(history.event_date);
 
     if (days !== null && days < 0) {
-
-      const atraso = Math.abs(days);
-
-      return `Vencida (${atraso} día(s) de atraso)`;
+      return `Vencida (${Math.abs(days)} día(s) de atraso)`;
     }
 
     if (days !== null && days <= 2) {
@@ -420,7 +561,7 @@ completeForm = {
   getHistoryCardColor(history: VehicleHistory): string {
 
     if (history.maintenance_status === 'completed') {
-      return 'bg-green-50 border-green-200';
+      return 'bg-green-50 border-green-300';
     }
 
     if (history.maintenance_status === 'cancelled') {
@@ -445,8 +586,9 @@ completeForm = {
   }
 
   getHistoryBadge(history: VehicleHistory): string {
+
     if (history.maintenance_status === 'completed') {
-      return 'bg-green-100 text-green-700';
+      return 'bg-green-600 text-white';
     }
 
     if (history.maintenance_status === 'cancelled') {

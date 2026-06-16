@@ -171,7 +171,7 @@ shiftForm: ShiftRequest = {
   }
 
   getTodayDriver(vehicle: Vehicle): string {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getTodayLocalDate();
 
     const todayShift = this.shiftDays.find(day =>
       Number(day.vehicle_id) === Number(vehicle.id) &&
@@ -274,6 +274,25 @@ shiftForm: ShiftRequest = {
     });
   }
 
+  parseLocalDate(dateValue: string): Date {
+    const cleanDate = dateValue.split('T')[0];
+    const [year, month, day] = cleanDate.split('-').map(Number);
+
+    return new Date(year, month - 1, day);
+  }
+
+  formatLocalDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  getTodayLocalDate(): string {
+    return this.formatLocalDate(new Date());
+  }
+
   handleDelete(id: number) {
     const confirmed = confirm('¿Eliminar relevo?');
 
@@ -348,29 +367,21 @@ shiftForm: ShiftRequest = {
   }
 
   getCalendarDates(): string[] {
-  const start =
-    this.calendarStartDate ||
-    new Date().toISOString().split('T')[0];
+    const start =
+      this.calendarStartDate ||
+      this.getTodayLocalDate();
 
-  const dates: string[] = [];
-  const startDate = new Date(start);
+    const dates: string[] = [];
+    const startDate = this.parseLocalDate(start);
 
-  for (let i = 0; i < this.calendarDays; i++) {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
+    for (let i = 0; i < this.calendarDays; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
 
-    dates.push(date.toISOString().split('T')[0]);
-  }
+      dates.push(this.formatLocalDate(date));
+    }
 
-  return dates;}
-
-  getManualShiftDay(vehicleId: number, date: string): ShiftDay | null {
-    return (
-      this.shiftDays.find(day =>
-        Number(day.vehicle_id) === Number(vehicleId) &&
-        day.shift_date === date
-      ) || null
-    );
+    return dates;
   }
 
  getAutomaticDriverForDate(vehicle: Vehicle, date: string): number | null {
@@ -380,6 +391,14 @@ shiftForm: ShiftRequest = {
     );
 
     return day?.driver_id || null;
+  }
+  getManualShiftDay(vehicleId: number, date: string): ShiftDay | null {
+    return (
+      this.shiftDays.find(day =>
+        Number(day.vehicle_id) === Number(vehicleId) &&
+        day.shift_date === date
+      ) || null
+    );
   }
 
   getDriverForDate(vehicle: Vehicle, date: string): number | null {
@@ -459,12 +478,6 @@ shiftForm: ShiftRequest = {
   getMonthCalendarDays(): string[] {
     const days: string[] = [];
 
-    const firstDay = new Date(
-      this.currentCalendarYear,
-      this.currentCalendarMonth,
-      1
-    );
-
     const lastDay = new Date(
       this.currentCalendarYear,
       this.currentCalendarMonth + 1,
@@ -478,14 +491,14 @@ shiftForm: ShiftRequest = {
         day
       );
 
-      days.push(date.toISOString().split('T')[0]);
+      days.push(this.formatLocalDate(date));
     }
 
     return days;
   }
 
   getDayNumber(date: string): number {
-    return new Date(date).getDate();
+    return this.parseLocalDate(date).getDate();
   }
 
   startEditDate(date: string) {

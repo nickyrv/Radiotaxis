@@ -30,7 +30,7 @@
         </div>
 
         <p class="text-gray-600 text-sm mt-1">
-          {{ user.name }}
+          {{ currentOwner?.name || user.name }}
         </p>
 
         <span class="inline-block mt-2 px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">
@@ -139,7 +139,7 @@
               </div>
 
               <div class="text-gray-900 text-xl font-bold">
-                Bs. {{ totalThisMonth | number }}
+                Bs. {{ totalIncome | number }}
               </div>
 
             </div>
@@ -163,7 +163,7 @@
               </div>
 
               <div class="text-gray-900 text-xl font-bold">
-                Bs. {{ totalMaintenanceCosts | number }}
+                Bs. {{ totalExpenses | number }}
               </div>
 
             </div>
@@ -257,43 +257,28 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
 
-              <div>
+          <div>
+            <p class="text-gray-600">Tipo de servicio</p>
+            <p class="text-gray-900">
+              {{ vehicle.service_type === 'radio_taxi' ? 'Radio taxi' : 'Taxi' }}
+            </p>
+          </div>
 
-                <p class="text-gray-600">
-                  Último Mantenimiento
-                </p>
+          <div>
+            <p class="text-gray-600">Estado administrativo</p>
+            <p class="text-gray-900">
+              {{ vehicle.management_status === 'active' ? 'Activo' : 'Inactivo' }}
+            </p>
+          </div>
 
-                <p class="text-gray-900">
-                  {{ vehicle.lastMaintenance | date:'shortDate' }}
-                </p>
+          <div>
+            <p class="text-gray-600">Fecha de registro</p>
+            <p class="text-gray-900">
+              {{ vehicle.registration_date || 'Sin fecha' }}
+            </p>
+          </div>
 
-              </div>
-
-              <div>
-
-                <p class="text-gray-600">
-                  Próximo Mantenimiento
-                </p>
-
-                <p class="text-gray-900">
-                  {{ vehicle.nextMaintenance | date:'shortDate' }}
-                </p>
-
-              </div>
-
-              <div>
-
-                <p class="text-gray-600">
-                  Vence Documentación
-                </p>
-
-                <p class="text-gray-900">
-                  {{ vehicle.documentExpiry | date:'shortDate' }}
-                </p>
-
-              </div>
-
-            </div>
+        </div>
 
           </div>
 
@@ -340,7 +325,7 @@
               >
 
                 <td class="px-4 py-3 text-gray-700">
-                  {{ payment.date | date:'shortDate' }}
+                  {{ payment.payment_date | date:'shortDate' }}
                 </td>
 
                 <td class="px-4 py-3 text-gray-700">
@@ -378,7 +363,7 @@
             <div class="flex items-center justify-between mb-2">
 
               <h4 class="text-gray-900 font-semibold">
-                {{ maintenance.type }}
+                {{ maintenance.category || maintenance.detail || 'Mantenimiento' }}
               </h4>
 
               <span class="text-gray-900 font-bold">
@@ -388,11 +373,11 @@
             </div>
 
             <p class="text-gray-600 text-sm">
-              {{ maintenance.description }}
+              {{ maintenance.description || maintenance.detail || 'Sin descripción' }}
             </p>
 
             <div class="text-gray-500 text-sm mt-2">
-              {{ maintenance.date | date:'shortDate' }}
+              {{ maintenance.event_date | date:'shortDate' }}
             </div>
 
           </div>

@@ -189,12 +189,13 @@
       class="px-4 py-2 border rounded-lg"
     >
       <option value="">Todas las categorías</option>
-      <option value="liquido_frenos">Líquido de frenos</option>
-      <option value="aceite">Cambio de aceite</option>
-      <option value="pastillas">Pastillas</option>
-      <option value="llantas">Llantas</option>
-      <option value="soat">SOAT</option>
-      <option value="documentacion">Documentación</option>
+
+      <option
+        *ngFor="let category of availableHistoryCategories"
+        [value]="category"
+      >
+        {{ getCategoryLabel(category) }}
+      </option>
     </select>
 
     <select
@@ -214,7 +215,7 @@
 
   <div class="space-y-4">
     <div
-      *ngFor="let history of getVehicleHistoryAlerts(selectedVehicle.id)"
+     *ngFor="let history of getFilteredHistoryForSelectedVehicle()"
       class="rounded-xl p-5 border-2"
       [ngClass]="getHistoryCardColor(history)"
     >
@@ -254,7 +255,7 @@
         <div
           *ngIf="!history.maintenance_status || history.maintenance_status === 'pending'"
           class="flex gap-2 mt-2"
-        >                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+        >
           <button
             type="button"
             (click)="openHistoryCompleteModal(history)"
@@ -272,13 +273,26 @@
           </button>
         </div>
 
+        <div
+          *ngIf="history.maintenance_status === 'completed'"
+          class="flex gap-2 mt-2"
+        >
+          <button
+            type="button"
+            (click)="confirmReopenHistory(history)"
+            class="px-3 py-2 border border-yellow-400 text-yellow-700 rounded-lg hover:bg-yellow-50 text-sm"
+          >
+            Corregir estado
+          </button>
+        </div>
+
       </div>      
     </div>
     </div>
    
 
     <p
-      *ngIf="getFilteredAlertsForSelectedVehicle().length === 0"
+      *ngIf="getFilteredHistoryForSelectedVehicle().length === 0"
       class="text-gray-500"
     >
       No hay alertas para este vehículo.

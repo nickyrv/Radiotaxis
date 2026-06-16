@@ -1,103 +1,200 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
+import { Router, RouterModule } from '@angular/router';
+
+import {
+  VehicleService,
+  Vehicle
+} from '../../services/vehicle.service';
+import {
+  OwnerService,
+  Owner
+} from '../../services/owner.service'; 
+import {
+  PaymentService,
+  Payment
+} from '../../services/payment.service';
+
+import {
+  VehicleHistoryService,
+  VehicleHistory
+} from '../../services/vehicle-history.service';
 
 @Component({
   selector: 'app-owner-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideAngularModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './owner-dashboard.component.html',
   styleUrls: ['./owner-dashboard.component.css']
 })
-export class OwnerDashboardComponent {
+export class OwnerDashboardComponent implements OnInit {
 
   sidebarOpen = false;
 
-  user = {
-    id: '2',
-    name: 'Juan Propietario',
-    role: 'owner'
-  };
+  user: any = null;
 
-  ownerVehicles = [
-    {
-      id: 'v1',
-      plate: 'ABC-123',
-      model: 'Toyota Corolla',
-      year: 2020,
-      status: 'active',
-      lastMaintenance: '2025-11-01',
-      nextMaintenance: '2025-12-01',
-      documentExpiry: '2026-05-01',
-      ownerId: '2'
-    },
-    {
-      id: 'v2',
-      plate: 'XYZ-777',
-      model: 'Suzuki Dzire',
-      year: 2022,
-      status: 'maintenance',
-      lastMaintenance: '2025-10-15',
-      nextMaintenance: '2025-11-20',
-      documentExpiry: '2026-03-10',
-      ownerId: '2'
+  ownerId: number | null = null;
+
+  owners: Owner[] = [];
+  currentOwner: Owner | null = null;
+
+  vehicles: Vehicle[] = [];
+
+  payments: Payment[] = [];
+
+  vehicleHistory: VehicleHistory[] = [];
+
+  constructor(
+    private vehicleService: VehicleService,
+    private paymentService: PaymentService,
+    private vehicleHistoryService: VehicleHistoryService,
+    private ownerService: OwnerService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (!savedUser) {
+      this.router.navigate(['/login'], { replaceUrl: true });
+      return;
     }
-  ];
-
-  vehicleIds = this.ownerVehicles.map(v => v.id);
-
-  ownerPayments = [
-    {
-      id: 'p1',
-      vehicleId: 'v1',
-      concept: 'Pago semanal',
-      amount: 1500,
-      date: '2026-05-10'
-    },
-    {
-      id: 'p2',
-      vehicleId: 'v2',
-      concept: 'Pago diario',
-      amount: 800,
-      date: '2026-05-11'
-    }
-  ];
-
-  ownerMaintenances = [
-    {
-      id: 'm1',
-      vehicleId: 'v1',
-      type: 'Cambio de aceite',
-      description: 'Mantenimiento preventivo',
-      cost: 300,
-      date: '2026-05-01'
-    },
-    {
-      id: 'm2',
-      vehicleId: 'v2',
-      type: 'Frenos',
-      description: 'Cambio de pastillas',
-      cost: 900,
-      date: '2026-05-03'
-    }
-  ];
-
-  totalThisMonth = this.ownerPayments.reduce(
-    (sum, p) => sum + p.amount,
-    0
-  );
-
-  totalMaintenanceCosts = this.ownerMaintenances.reduce(
-    (sum, m) => sum + m.cost,
-    0
-  );
-
-  netProfit =
-    this.totalThisMonth - this.totalMaintenanceCosts;
-
-  logout() {
-    alert('Sesión cerrada');
+    this.user = JSON.parse(savedUser);
+    
+    this.loadOwnerAndData();
   }
 
+  loadOwnerAndData() {
+    this.ownerService.getOwners().subscribe({
+      next: (data) => {
+        this.owners = data;
+
+        this.currentOwner =
+          this.owners.find(owner =>
+            owner.email &&
+            this.user.email &&
+            owner.email.toLowerCase() === this.user.email.toLowerCase()
+          ) || null;
+
+        if (!this.currentOwner && this.user.related_id) {
+          this.currentOwner =
+            this.owners.find(owner =>
+              Number(owner.id) === Number(this.user.related_id)
+            ) || null;
+        }
+
+        if (!this.currentOwner) {
+          alert('No se encontró un propietario relacionado a este usuario');
+          return;
+        }
+
+        this.ownerId = Number(this.currentOwner.id);
+
+        this.loadVehicles();
+        this.loadPayments();
+        this.loadVehicleHistory();
+      },
+      error: (error) => {
+        console.error('Error al cargar propietario:', error);
+      }
+    });
+  }
+
+  loadVehicles() {
+    this.vehicleService.getVehicles().subscribe({
+      next: (data) => {
+        this.vehicles = data.filter(vehicle =>
+          Number(vehicle.owner_id) === Number(this.ownerId)
+        );
+      },
+      error: (error) => {
+        console.error('Error al cargar vehículos del propietario:', error);
+      }
+    });
+  }
+
+  loadPayments() {
+    this.paymentService.getPayments().subscribe({
+      next: (data) => {
+        this.payments = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar pagos:', error);
+      }
+    });
+  }
+
+  loadVehicleHistory() {
+    this.vehicleHistoryService.getAllHistory().subscribe({
+      next: (data) => {
+        this.vehicleHistory = data;
+      },
+      error: (error) => {
+        console.error('Error al cargar historial vehicular:', error);
+      }
+    });
+  }
+
+  get ownerVehicles() {
+    return this.vehicles;
+  }
+
+  get ownerVehicleIds() {
+    return this.ownerVehicles.map(vehicle => Number(vehicle.id));
+  }
+
+  get ownerPayments() {
+    return this.payments.filter(payment =>
+      payment.vehicle_id !== null &&
+      this.ownerVehicleIds.includes(Number(payment.vehicle_id))
+    );
+  }
+
+  get ownerMaintenances() {
+    return this.vehicleHistory.filter(history =>
+      history.vehicle_id !== null &&
+      this.ownerVehicleIds.includes(Number(history.vehicle_id)) &&
+      history.cost !== null &&
+      history.cost !== undefined &&
+      Number(history.cost) > 0
+    );
+  }
+
+  get totalIncome() {
+    return this.ownerPayments
+      .filter(payment => payment.type === 'income')
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  }
+
+  get totalExpenses() {
+    const paymentExpenses = this.ownerPayments
+      .filter(payment => payment.type === 'expense')
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+
+    const maintenanceExpenses = this.ownerMaintenances
+      .reduce((sum, history) => sum + Number(history.cost || 0), 0);
+
+    return paymentExpenses + maintenanceExpenses;
+  }
+
+  get netProfit() {
+    return this.totalIncome - this.totalExpenses;
+  }
+
+  getVehiclePlate(vehicleId: number | null): string {
+    if (!vehicleId) {
+      return 'N/A';
+    }
+
+    return (
+      this.vehicles.find(vehicle =>
+        Number(vehicle.id) === Number(vehicleId)
+      )?.plate || 'N/A'
+    );
+  }
+
+  logout() {
+    localStorage.clear();
+    this.router.navigate(['/login'], { replaceUrl: true });
+  }
 }

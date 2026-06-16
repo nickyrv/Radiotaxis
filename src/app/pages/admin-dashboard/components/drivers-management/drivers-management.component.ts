@@ -63,6 +63,7 @@ export class DriversManagementComponent implements OnInit {
   selectedCriminalRecordFile: File | null = null;
   selectedDriver: Driver | null = null;
   showStartShiftModal = false;
+  hasCiComplement = false;
   pendingShiftDriver: Driver | null = null;
   pendingShiftVehicleId: number | null = null;
   mapCenter: google.maps.LatLngLiteral = {
@@ -117,6 +118,7 @@ export class DriversManagementComponent implements OnInit {
     return {
       name: '',
       ci: '',
+      ci_complement: '',
       phone: '',
       email: '',
 
@@ -356,10 +358,12 @@ export class DriversManagementComponent implements OnInit {
 
   handleEdit(driver: Driver) {
     this.editingDriver = driver;
+    this.hasCiComplement = !!driver.ci_complement;
 
     this.driverForm = {
       name: driver.name,
       ci: driver.ci,
+      ci_complement: driver.ci_complement,
       phone: driver.phone,
       email: driver.email,
 
@@ -426,6 +430,7 @@ export class DriversManagementComponent implements OnInit {
     const updatedDriver: DriverRequest = {
       name: driver.name,
       ci: driver.ci,
+      ci_complement: driver.ci_complement,
       phone: driver.phone,
       email: driver.email,
 
@@ -511,11 +516,6 @@ export class DriversManagementComponent implements OnInit {
       return false;
     }
 
-    if (!this.driverForm.license || !this.driverForm.license.trim()) {
-      alert('Debe ingresar la licencia del conductor');
-      return false;
-    }
-
     if (!this.driverForm.license_category) {
       alert('Debe seleccionar la categoría de licencia');
       return false;
@@ -580,6 +580,7 @@ export class DriversManagementComponent implements OnInit {
 
     const payload: DriverRequest = {
       ...this.driverForm,
+      license: this.driverForm.ci,
       photo_url: this.selectedPhotoFile
         ? this.editingDriver?.photo_url || null
         : this.driverForm.photo_url
@@ -725,6 +726,7 @@ export class DriversManagementComponent implements OnInit {
     this.selectedCiFrontFile = null;
     this.selectedCiBackFile = null;
     this.selectedElectricityBillFile = null;
+    this.hasCiComplement = false;
   }
 
   closeStartShiftModal() {

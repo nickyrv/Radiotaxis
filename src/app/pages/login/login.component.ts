@@ -37,15 +37,57 @@ export class LoginComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (savedUser) {
+
+      try {
+
+        const user = JSON.parse(savedUser);
+
+        if (user.role === 'admin') {
+          this.router.navigate(
+            ['/admin-dashboard'],
+            { replaceUrl: true }
+          );
+          return;
+        }
+
+        if (user.role === 'owner') {
+          this.router.navigate(
+            ['/owner-dashboard'],
+            { replaceUrl: true }
+          );
+          return;
+        }
+
+        if (user.role === 'driver') {
+          this.router.navigate(
+            ['/driver-dashboard'],
+            { replaceUrl: true }
+          );
+          return;
+        }
+
+      } catch {
+        localStorage.removeItem('currentUser');
+      }
+
+    }
+
     const savedAttempts = localStorage.getItem('failedAttempts');
     const savedBlocked = localStorage.getItem('isBlocked');
+
     if (savedAttempts) {
       this.failedAttempts = Number(savedAttempts);
     }
+
     if (savedBlocked === 'true') {
       this.isBlocked = true;
       this.loginMessage = 'Acceso bloqueado';
     }
+
   }
 
   showLoginNotification(
@@ -58,6 +100,8 @@ export class LoginComponent implements OnInit {
     this.notificationType = type;
     this.showNotification = true;
   }
+
+  
 
   openForgotPassword() {
     this.recoveryEmail = this.email;
@@ -180,15 +224,15 @@ export class LoginComponent implements OnInit {
           this.showNotification = false;
 
           if (user.role === 'admin') {
-            this.router.navigate(['/admin-dashboard']);
+            this.router.navigate(['/admin-dashboard'], { replaceUrl: true });
           }
 
           if (user.role === 'owner') {
-            this.router.navigate(['/owner-dashboard']);
+            this.router.navigate(['/owner-dashboard'], { replaceUrl: true });
           }
 
           if (user.role === 'driver') {
-            this.router.navigate(['/driver-dashboard']);
+            this.router.navigate(['/driver-dashboard'], { replaceUrl: true });
           }
         }, 800);
 

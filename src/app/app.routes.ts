@@ -6,6 +6,8 @@ import { OwnerDashboardComponent } from './pages/owner-dashboard/owner-dashboard
 import { AdminDashboardComponent } from './pages/admin-dashboard/admin-dashboard.component';
 import { DriverDashboardComponent } from './pages/driver-dashboard/driver-dashboard.component';
 
+import { authGuard } from './guards/auth.guard';
+
 export const routes: Routes = [
 
   {
@@ -21,22 +23,26 @@ export const routes: Routes = [
 
   {
     path: 'perfil',
-    component: PerfilUsuarioComponent
+    component: PerfilUsuarioComponent,
+    canActivate: [authGuard]
   },
 
   {
     path: 'owner-dashboard',
-    component: OwnerDashboardComponent
+    component: OwnerDashboardComponent,
+    canActivate: [authGuard]
   },
 
   {
     path: 'admin-dashboard',
-    component: AdminDashboardComponent
+    component: AdminDashboardComponent,
+    canActivate: [authGuard]
   },
 
   {
     path: 'driver-dashboard',
-    component: DriverDashboardComponent
+    component: DriverDashboardComponent,
+    canActivate: [authGuard]
   },
 
   {

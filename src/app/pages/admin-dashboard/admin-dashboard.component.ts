@@ -7,18 +7,18 @@ import { DriversManagementComponent } from './components/drivers-management/driv
 import { OwnersManagementComponent } from './components/owners-management/owners-management.component';
 import { ShiftsManagementComponent } from './components/shifts-management/shifts-management.component';
 import { AlertsManagementComponent } from './components/alerts-management/alerts-management.component';
-import { TripsManagementComponent } from './components/trips-management/trips-management.component';
 import { PaymentsManagementComponent } from './components/payments-management/payments-management.component';
+import { PerfilUsuarioComponent } from '../perfil-usuario/perfil-usuario.component';
 
 type AdminView =
   | 'overview'
   | 'vehicles'
   | 'drivers'
   | 'owners'
-  | 'trips'
   | 'shifts'
   | 'alerts'
-  | 'payments' ;
+  | 'payments'
+  | 'profile' ;
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -31,7 +31,6 @@ type AdminView =
     OwnersManagementComponent,
     ShiftsManagementComponent,
     AlertsManagementComponent,
-    TripsManagementComponent,
     PaymentsManagementComponent
 
   ],
@@ -57,7 +56,6 @@ export class AdminDashboardComponent implements OnInit {
     { id: 'owners', label: 'Propietarios' },
     { id: 'shifts', label: 'Relevos' },
     { id: 'alerts', label: 'Alertas' },
-    { id: 'trips', label: 'Viajes' },
     { id: 'payments', label: 'Pagos' }
 
   ];
@@ -81,9 +79,11 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   logout() {
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('failedAttempts');
+    localStorage.removeItem('isBlocked');
 
-    console.log('Cerrar sesión');
-
+    window.location.href = '/login';
   }
 
 }

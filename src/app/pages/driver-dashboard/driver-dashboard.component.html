@@ -4,9 +4,10 @@
   <div class="bg-white border-b border-gray-200 p-4">
 
     <div class="flex items-center justify-between mb-2">
+
       <div>
         <h2 class="text-2xl font-bold text-gray-900">
-          Hola, {{ user.name }}
+          Hola, {{ driverInfo?.name || user?.name || 'Conductor' }}
         </h2>
 
         <p class="text-gray-600 text-sm">
@@ -14,9 +15,13 @@
         </p>
       </div>
 
-      <button class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+      <button
+        (click)="logout()"
+        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+      >
         Cerrar sesión
       </button>
+
     </div>
 
     <div
@@ -38,6 +43,13 @@
           Activo
         </span>
       </div>
+    </div>
+
+    <div
+      *ngIf="!vehicle"
+      class="mt-3 p-3 bg-yellow-50 text-yellow-700 rounded-lg text-sm"
+    >
+      No tiene vehículo asignado actualmente.
     </div>
 
   </div>
@@ -66,7 +78,7 @@
     <div class="grid grid-cols-2 gap-3">
       <div class="bg-white rounded-lg border border-gray-200 p-4">
         <div class="text-gray-600 text-sm mb-1">
-          Esta Semana
+          Pagos registrados
         </div>
 
         <div class="text-gray-900 text-xl font-bold">
@@ -76,11 +88,11 @@
 
       <div class="bg-white rounded-lg border border-gray-200 p-4">
         <div class="text-gray-600 text-sm mb-1">
-          Turnos Pendientes
+          Turnos registrados
         </div>
 
         <div class="text-gray-900 text-xl font-bold">
-          {{ scheduledShiftsCount }}
+          {{ driverShifts.length }}
         </div>
       </div>
     </div>
@@ -95,6 +107,7 @@
       </h3>
 
       <div class="space-y-2">
+
         <div class="flex items-center justify-between">
           <span class="text-gray-600 text-sm">
             Inicio
@@ -111,56 +124,74 @@
           </span>
 
           <span class="text-gray-900">
-            {{ formatDateTime(nextShift.end_time) }}
+            {{ nextShift.end_time ? formatDateTime(nextShift.end_time) : 'Sin fecha de fin' }}
           </span>
         </div>
+
       </div>
     </div>
 
     <!-- CRONOGRAMA -->
     <div class="bg-white rounded-lg border border-gray-200 p-4">
+
       <h3 class="text-lg font-semibold text-gray-900 mb-4">
         Cronograma de Relevos
       </h3>
 
-      <div class="space-y-3">
+      <div
+        *ngIf="driverShifts.length > 0; else noShifts"
+        class="space-y-3"
+      >
         <div
-          *ngFor="let shift of driverShifts"
+          *ngFor="let item of driverShifts"
           class="p-3 bg-gray-50 rounded-lg"
         >
           <div class="flex items-center justify-between">
+
             <div>
               <div class="text-gray-900 text-sm">
-                {{ formatDate(shift.start_time) }}
+                {{ formatDate(item.start_time) }}
               </div>
 
               <div class="text-gray-600 text-sm">
-                {{ formatDateTime(shift.start_time) }}
+                {{ formatDateTime(item.start_time) }}
               </div>
             </div>
 
             <span
               class="text-xs px-2 py-1 rounded-full"
               [ngClass]="{
-                'bg-green-100 text-green-700': shift.status === 'active',
-                'bg-blue-100 text-blue-700': shift.status === 'scheduled',
-                'bg-gray-100 text-gray-700': shift.status === 'completed'
+                'bg-green-100 text-green-700': item.status === 'active',
+                'bg-blue-100 text-blue-700': item.status === 'scheduled',
+                'bg-gray-100 text-gray-700': item.status === 'completed'
               }"
             >
-              {{ shift.status }}
+              {{ item.status }}
             </span>
+
           </div>
         </div>
       </div>
+
+      <ng-template #noShifts>
+        <p class="text-gray-500 text-sm">
+          No hay turnos registrados.
+        </p>
+      </ng-template>
+
     </div>
 
     <!-- HISTORIAL DE PAGOS -->
     <div class="bg-white rounded-lg border border-gray-200 p-4">
+
       <h3 class="text-lg font-semibold text-gray-900 mb-4">
         Historial de Pagos
       </h3>
 
-      <div class="space-y-2">
+      <div
+        *ngIf="driverPayments.length > 0; else noPayments"
+        class="space-y-2"
+      >
         <div
           *ngFor="let payment of driverPayments"
           class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
@@ -180,18 +211,19 @@
               Bs. {{ payment.amount }}
             </div>
 
-            <span
-              class="text-xs px-2 py-1 rounded-full"
-              [ngClass]="{
-                'bg-blue-100 text-blue-700': payment.type === 'daily',
-                'bg-purple-100 text-purple-700': payment.type === 'weekly'
-              }"
-            >
-              {{ payment.type }}
+            <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+              Renta
             </span>
           </div>
         </div>
       </div>
+
+      <ng-template #noPayments>
+        <p class="text-gray-500 text-sm">
+          No hay pagos registrados.
+        </p>
+      </ng-template>
+
     </div>
 
     <!-- DOCUMENTACIÓN -->
@@ -204,68 +236,74 @@
       </h3>
 
       <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+
         <div>
           <div class="text-gray-900 text-sm">
             Licencia de Conducir
           </div>
 
           <div class="text-gray-600 text-sm">
-            {{ driverInfo.license }}
+            {{ driverInfo.license || driverInfo.ci || 'Sin licencia' }}
           </div>
         </div>
 
         <div class="text-right">
+
           <div class="text-gray-900 text-sm">
-            {{ driverInfo.license_expiry ? formatDate(driverInfo.license_expiry) : 'Sin fecha' }}
+            {{
+              driverInfo.license_expiry
+                ? formatDate(driverInfo.license_expiry)
+                : 'Sin fecha'
+            }}
           </div>
 
           <span class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
             Vigente
           </span>
+
         </div>
+
       </div>
     </div>
 
-    <!-- REPORTES DEL CONDUCTOR -->
-<div
-  *ngIf="driverIncidents.length > 0"
-  class="bg-white rounded-lg border border-gray-200 p-4"
->
-  <h3 class="text-lg font-semibold text-gray-900 mb-4">
-    Reportes Realizados
-  </h3>
-
-  <div class="space-y-2">
+    <!-- INCIDENTES REPORTADOS -->
     <div
-      *ngFor="let incident of driverIncidents"
-      class="p-3 bg-gray-50 rounded-lg"
+      *ngIf="driverIncidents.length > 0"
+      class="bg-white rounded-lg border border-gray-200 p-4"
     >
-      <div class="flex items-start justify-between mb-2">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">
+        Incidentes Reportados
+      </h3>
 
-        <div class="text-gray-900 text-sm font-medium">
-          {{ incident.category }}
+      <div class="space-y-2">
+
+        <div
+          *ngFor="let incident of driverIncidents"
+          class="p-3 bg-gray-50 rounded-lg"
+        >
+          <div class="flex items-start justify-between mb-2">
+
+            <div class="text-gray-900 text-sm font-medium">
+              {{ incident.category }}
+            </div>
+
+            <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+              {{ incident.maintenance_status || 'Registrado' }}
+            </span>
+
+          </div>
+
+          <div class="text-gray-600 text-sm mb-1">
+            {{ incident.description || incident.detail || 'Sin descripción' }}
+          </div>
+
+          <div class="text-gray-500 text-sm">
+            {{ formatDate(incident.event_date) }}
+          </div>
         </div>
 
-        <span class="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-          Registrado
-        </span>
-
-      </div>
-
-      <div class="text-gray-700 text-sm mb-1">
-        {{ incident.detail || 'Reporte del conductor' }}
-      </div>
-
-      <div class="text-gray-600 text-sm mb-1">
-        {{ incident.description || 'Sin descripción' }}
-      </div>
-
-      <div class="text-gray-500 text-sm">
-        {{ formatDate(incident.event_date) }}
       </div>
     </div>
-  </div>
-</div>
 
     <!-- MODAL REGISTRAR PAGO -->
     <div
@@ -281,6 +319,7 @@
         </div>
 
         <div class="p-6 space-y-4">
+
           <div>
             <label class="block text-gray-700 mb-2">
               Tipo de Entrega
@@ -333,9 +372,11 @@
             <input
               type="text"
               [(ngModel)]="paymentForm.concept"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              readonly
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100"
             />
           </div>
+
         </div>
 
         <div class="p-6 border-t border-gray-200 flex gap-3">
@@ -373,6 +414,7 @@
         </div>
 
         <div class="p-6 space-y-4">
+
           <div>
             <label class="block text-gray-700 mb-2">
               Tipo de Incidente
@@ -400,6 +442,7 @@
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             ></textarea>
           </div>
+
         </div>
 
         <div class="p-6 border-t border-gray-200 flex gap-3">

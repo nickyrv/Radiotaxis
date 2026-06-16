@@ -6,6 +6,7 @@ export interface Driver {
   id: number;
   name: string;
   ci: string | null;
+  ci_complement: string | null;
   phone: string | null;
   email: string | null;
   license: string | null;
@@ -29,6 +30,7 @@ export interface DriverRequest {
 
   name: string;
   ci: string | null;
+  ci_complement: string | null;
   phone: string | null;
   email: string | null;
   license: string | null;
