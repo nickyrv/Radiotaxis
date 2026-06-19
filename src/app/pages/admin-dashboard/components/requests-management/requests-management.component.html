@@ -1,0 +1,252 @@
+<div class="space-y-6">
+
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Solicitudes
+      </h1>
+      <p class="text-gray-600">
+        Revisión y aprobación de solicitudes enviadas por propietarios y conductores.
+      </p>
+    </div>
+
+    <button
+      (click)="loadRequests()"
+      class="px-4 py-2 bg-blue-600 text-white rounded-lg"
+    >
+      Actualizar
+    </button>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+
+    <div
+      *ngIf="isLoading"
+      class="p-6 text-gray-600"
+    >
+      Cargando solicitudes...
+    </div>
+
+    <div
+      *ngIf="!isLoading && requests.length === 0"
+      class="p-6 text-gray-600"
+    >
+      No existen solicitudes registradas.
+    </div>
+
+    <table
+      *ngIf="!isLoading && requests.length > 0"
+      class="w-full"
+    >
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left text-gray-700">Fecha</th>
+          <th class="px-4 py-3 text-left text-gray-700">Solicitante</th>
+          <th class="px-4 py-3 text-left text-gray-700">Tipo</th>
+          <th class="px-4 py-3 text-left text-gray-700">Motivo</th>
+          <th class="px-4 py-3 text-left text-gray-700">Estado</th>
+          <th class="px-4 py-3 text-left text-gray-700">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y">
+        <tr
+          *ngFor="let request of requests"
+          class="hover:bg-gray-50"
+        >
+          <td class="px-4 py-3 text-gray-700">
+            {{ request.created_at | date:'short' }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700">
+            {{ getRequesterLabel(request) }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700">
+            {{ getRequestTypeLabel(request.request_type) }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700 max-w-xs">
+            {{ request.reason || 'Sin motivo' }}
+          </td>
+
+          <td class="px-4 py-3">
+            <span
+              class="px-2 py-1 rounded-full text-sm"
+              [ngClass]="getStatusColor(request.request_status)"
+            >
+              {{ getStatusLabel(request.request_status) }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3">
+            <div class="flex flex-wrap gap-2">
+
+              <button
+                (click)="openDetail(request)"
+                class="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm"
+              >
+                Ver
+              </button>
+
+              <button
+                *ngIf="request.request_status === 'pending'"
+                (click)="openResponseModal(request, 'approved')"
+                class="px-3 py-1 bg-green-600 text-white rounded-lg text-sm"
+              >
+                Aprobar
+              </button>
+
+              <button
+                *ngIf="request.request_status === 'pending'"
+                (click)="openResponseModal(request, 'rejected')"
+                class="px-3 py-1 bg-red-600 text-white rounded-lg text-sm"
+              >
+                Rechazar
+              </button>
+
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+</div>
+
+<!-- MODAL DETALLE -->
+<div
+  *ngIf="showDetailModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        Detalle de Solicitud
+      </h2>
+    </div>
+
+    <div
+      *ngIf="selectedRequest"
+      class="p-6 space-y-4"
+    >
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <div>
+          <p class="text-sm text-gray-500">Tipo</p>
+          <p class="text-gray-900 font-medium">
+            {{ getRequestTypeLabel(selectedRequest.request_type) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Estado</p>
+          <span
+            class="inline-block px-2 py-1 rounded-full text-sm"
+            [ngClass]="getStatusColor(selectedRequest.request_status)"
+          >
+            {{ getStatusLabel(selectedRequest.request_status) }}
+          </span>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Solicitante</p>
+          <p class="text-gray-900 font-medium">
+            {{ getRequesterLabel(selectedRequest) }}
+          </p>
+        </div>
+
+        <div>
+          <p class="text-sm text-gray-500">Fecha</p>
+          <p class="text-gray-900 font-medium">
+            {{ selectedRequest.created_at | date:'short' }}
+          </p>
+        </div>
+
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Motivo</p>
+        <p class="text-gray-900">
+          {{ selectedRequest.reason || 'Sin motivo' }}
+        </p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Detalles</p>
+        <pre class="bg-gray-100 p-4 rounded-lg text-sm whitespace-pre-wrap overflow-x-auto">
+{{ formatDetails(selectedRequest.details) }}
+        </pre>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Respuesta Admin</p>
+        <p class="text-gray-900">
+          {{ selectedRequest.admin_response || 'Sin respuesta aún' }}
+        </p>
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end">
+      <button
+        (click)="closeDetail()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cerrar
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL APROBAR / RECHAZAR -->
+<div
+  *ngIf="showResponseModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-xl w-full">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        {{ responseAction === 'approved' ? 'Aprobar Solicitud' : 'Rechazar Solicitud' }}
+      </h2>
+      <p class="text-gray-600 text-sm mt-1">
+        Registre una respuesta para el solicitante.
+      </p>
+    </div>
+
+    <div class="p-6">
+
+      <label class="block text-gray-700 mb-2">Respuesta</label>
+      <textarea
+        rows="4"
+        [(ngModel)]="adminResponse"
+        class="w-full px-4 py-2 border rounded-lg"
+        placeholder="Ingrese la respuesta para el propietario o conductor..."
+      ></textarea>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end gap-3">
+      <button
+        (click)="closeResponseModal()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        (click)="sendResponse()"
+        [ngClass]="responseAction === 'approved' ? 'bg-green-600' : 'bg-red-600'"
+        class="px-4 py-2 text-white rounded-lg"
+      >
+        Confirmar
+      </button>
+    </div>
+
+  </div>
+</div>

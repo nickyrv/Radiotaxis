@@ -210,6 +210,14 @@
       <option value="completed">Realizadas</option>
       <option value="cancelled">No realizadas</option>
     </select>
+    <button
+      *ngIf="searchTerm || categoryFilter || statusFilter"
+      type="button"
+      (click)="clearFilters()"
+      class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+    >
+      🧹 Limpiar filtros
+    </button>
 
   </div>
 

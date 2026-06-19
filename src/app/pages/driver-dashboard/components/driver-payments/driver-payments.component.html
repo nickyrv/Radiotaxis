@@ -1,0 +1,96 @@
+<div class="space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      Pagos / Deudas
+    </h1>
+    <p class="text-gray-600">
+      Historial de pagos registrados y montos pendientes.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <p class="text-gray-600 text-sm">Total pagado</p>
+      <p class="text-2xl font-bold text-green-700">
+        Bs. {{ totalPayments | number }}
+      </p>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <p class="text-gray-600 text-sm">Deuda pendiente</p>
+      <p class="text-2xl font-bold text-red-700">
+        Bs. {{ pendingDebt | number }}
+      </p>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <p class="text-gray-600 text-sm">Pagos registrados</p>
+      <p class="text-2xl font-bold text-blue-700">
+        {{ driverPayments.length }}
+      </p>
+    </div>
+
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+
+    <div class="p-6 border-b">
+      <h2 class="text-lg font-semibold text-gray-900">
+        Historial de pagos
+      </h2>
+    </div>
+
+    <div
+      *ngIf="driverPayments.length === 0"
+      class="p-6 text-gray-500"
+    >
+      No existen pagos registrados.
+    </div>
+
+    <table
+      *ngIf="driverPayments.length > 0"
+      class="w-full"
+    >
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left text-gray-700">Fecha</th>
+          <th class="px-4 py-3 text-left text-gray-700">Concepto</th>
+          <th class="px-4 py-3 text-left text-gray-700">Estado</th>
+          <th class="px-4 py-3 text-right text-gray-700">Monto</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y">
+        <tr
+          *ngFor="let payment of driverPayments"
+          class="hover:bg-gray-50"
+        >
+          <td class="px-4 py-3 text-gray-700">
+            {{ payment.payment_date | date:'shortDate' }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700">
+            {{ payment.concept }}
+          </td>
+
+          <td class="px-4 py-3">
+            <span
+              class="px-2 py-1 rounded-full text-sm"
+              [ngClass]="getStatusColor(payment.status)"
+            >
+              {{ getStatusLabel(payment.status) }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-right font-semibold text-gray-900">
+            Bs. {{ payment.amount | number }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+</div>

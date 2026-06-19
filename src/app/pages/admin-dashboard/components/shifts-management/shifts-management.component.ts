@@ -156,18 +156,65 @@ shiftForm: ShiftRequest = {
 
   onVehicleSelected() {
     this.selectedVehicle =
-      this.vehicles.find(
-        vehicle => vehicle.id === this.shiftForm.vehicle_id
+      this.vehicles.find(vehicle =>
+        Number(vehicle.id) === Number(this.shiftForm.vehicle_id)
       ) || null;
 
     this.driverOneId = null;
     this.driverTwoId = null;
+
+    if (!this.selectedVehicle) {
+      return;
+    }
+
+    const assignedDrivers = this.drivers.filter(driver =>
+      Number(driver.vehicle_id) === Number(this.selectedVehicle?.id) &&
+      driver.status === 'active'
+    );
+
+    if (assignedDrivers.length > 0) {
+      this.driverOneId = assignedDrivers[0].id;
+    }
+
+    if (
+      this.selectedVehicle.management_type === 'relevos' &&
+      assignedDrivers.length > 1
+    ) {
+      this.driverTwoId = assignedDrivers[1].id;
+    }
+
+    if (
+      this.selectedVehicle.management_type === 'solo' &&
+      assignedDrivers.length > 0
+    ) {
+      this.driverTwoId = null;
+    }
   }
 
   get availableDrivers() {
     return this.drivers.filter(driver =>
       driver.status === 'active'
     );
+  }
+
+  getAvailableDriversForSelectedVehicle(
+    includeDriverId: number | null = null
+  ): Driver[] {
+    const vehicleId = this.selectedVehicle?.id || null;
+
+    return this.drivers.filter(driver => {
+      const isActive = driver.status === 'active';
+
+      const isFree =
+        !driver.vehicle_id ||
+        Number(driver.vehicle_id) === Number(vehicleId);
+
+      const isIncluded =
+        includeDriverId &&
+        Number(driver.id) === Number(includeDriverId);
+
+      return isActive && (isFree || isIncluded);
+    });
   }
 
   getTodayDriver(vehicle: Vehicle): string {
@@ -243,17 +290,103 @@ shiftForm: ShiftRequest = {
       return;
     }
 
-    const driverIds: number[] = [this.driverOneId];
+    if (
+      this.selectedVehicle.management_type === 'solo' &&
+      this.driverTwoId
+    ) {
+      alert('Este vehículo trabaja con un solo conductor');
+      return;
+    }
 
-    if (this.selectedVehicle.management_type === 'relevos') {
-      if (this.driverTwoId && this.driverTwoId === this.driverOneId) {
-        alert('Los dos conductores no pueden ser el mismo');
-        return;
+    if (
+      this.selectedVehicle.management_type === 'relevos' &&
+      this.driverTwoId &&
+      this.driverTwoId === this.driverOneId
+    ) {
+      alert('Los dos conductores no pueden ser el mismo');
+      return;
+    }
+
+    this.assignDriversToVehicleBeforeProgram();
+  }
+
+  assignDriversToVehicleBeforeProgram() {
+    if (!this.selectedVehicle || !this.shiftForm.vehicle_id || !this.driverOneId) {
+      return;
+    }
+
+    const driversToAssign = [this.driverOneId];
+
+    if (
+      this.selectedVehicle.management_type === 'relevos' &&
+      this.driverTwoId
+    ) {
+      driversToAssign.push(this.driverTwoId);
+    }
+
+    const updateRequests = driversToAssign.map(driverId => {
+      const driver = this.drivers.find(item =>
+        Number(item.id) === Number(driverId)
+      );
+
+      if (!driver) {
+        return null;
       }
 
-      if (this.driverTwoId) {
-        driverIds.push(this.driverTwoId);
-      }
+      return this.driverService.updateDriver(
+        driver.id,
+        {
+          name: driver.name,
+          ci: driver.ci,
+          ci_complement: driver.ci_complement,
+          phone: driver.phone,
+          email: driver.email,
+          license: driver.license,
+          license_expiry: driver.license_expiry,
+          license_category: driver.license_category,
+          has_tic: driver.has_tic,
+          address: driver.address,
+          address_lat: driver.address_lat,
+          address_lng: driver.address_lng,
+          photo_url: driver.photo_url,
+          house_door_photo_url: driver.house_door_photo_url,
+          ci_front_photo_url: driver.ci_front_photo_url,
+          ci_back_photo_url: driver.ci_back_photo_url,
+          electricity_bill_photo_url: driver.electricity_bill_photo_url,
+          criminal_record_pdf_url: driver.criminal_record_pdf_url,
+          status: driver.status,
+          vehicle_id: this.shiftForm.vehicle_id
+        }
+      );
+    }).filter(request => request !== null);
+
+    if (updateRequests.length === 0) {
+      this.programShiftDaysNow(driversToAssign);
+      return;
+    }
+
+    let completed = 0;
+
+    updateRequests.forEach(request => {
+      request?.subscribe({
+        next: () => {
+          completed++;
+
+          if (completed === updateRequests.length) {
+            this.programShiftDaysNow(driversToAssign);
+          }
+        },
+        error: (error) => {
+          console.error('Error al asignar conductor:', error);
+          alert('No se pudo asignar uno de los conductores al vehículo');
+        }
+      });
+    });
+  }
+
+  programShiftDaysNow(driverIds: number[]) {
+    if (!this.shiftForm.vehicle_id || !this.selectedVehicle) {
+      return;
     }
 
     this.shiftDayService.programShiftDays({
@@ -264,7 +397,11 @@ shiftForm: ShiftRequest = {
     }).subscribe({
       next: () => {
         alert('Rol de turnos programado correctamente');
+
         this.closeModal();
+
+        this.loadDrivers();
+        this.loadVehicles();
         this.loadShiftDays();
       },
       error: (error) => {
@@ -510,6 +647,12 @@ shiftForm: ShiftRequest = {
   }
 
   getShiftLabel(vehicle: Vehicle, date: string): string {
+    const driverId = this.getDriverForDate(vehicle, date);
+
+    if (!driverId) {
+      return 'No asignado';
+    }
+
     const source = this.getShiftSource(vehicle, date);
 
     return source === 'manual'

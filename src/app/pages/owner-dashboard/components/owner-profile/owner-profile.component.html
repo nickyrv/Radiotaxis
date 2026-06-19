@@ -1,0 +1,158 @@
+<div class="space-y-6">
+
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Mi Perfil
+      </h1>
+      <p class="text-gray-600">
+        Información personal del propietario.
+      </p>
+    </div>
+
+    <button
+      (click)="openEditForm()"
+      class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+    >
+      Solicitar actualización
+    </button>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+    <div *ngIf="currentOwner; else noOwner" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div>
+        <p class="text-sm text-gray-500">Nombre</p>
+        <p class="text-gray-900 font-medium">{{ currentOwner.name }}</p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">CI</p>
+        <p class="text-gray-900 font-medium">{{ currentOwner.ci || 'Sin CI' }}</p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Teléfono</p>
+        <p class="text-gray-900 font-medium">{{ currentOwner.phone || 'Sin teléfono' }}</p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Correo</p>
+        <p class="text-gray-900 font-medium">{{ currentOwner.email || 'Sin correo' }}</p>
+      </div>
+
+      <div class="md:col-span-2">
+        <p class="text-sm text-gray-500">Dirección</p>
+        <p class="text-gray-900 font-medium">{{ currentOwner.address || 'Sin dirección' }}</p>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Estado</p>
+        <span class="inline-block px-2 py-1 rounded-full text-sm bg-green-100 text-green-700">
+          {{ currentOwner.status === 'active' ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500">Fecha de registro</p>
+        <p class="text-gray-900 font-medium">
+          {{ currentOwner.join_date || 'Sin fecha' }}
+        </p>
+      </div>
+
+    </div>
+
+    <ng-template #noOwner>
+      <p class="text-gray-500">
+        No se encontró información del propietario.
+      </p>
+    </ng-template>
+
+  </div>
+
+</div>
+
+<div
+  *ngIf="showEditForm"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-2xl w-full">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        Solicitar actualización de datos
+      </h2>
+      <p class="text-gray-600 text-sm mt-1">
+        La solicitud será enviada al administrador para revisión.
+      </p>
+    </div>
+
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <div>
+        <label class="block text-gray-700 mb-2">Nombre</label>
+        <input
+          type="text"
+          [(ngModel)]="profileForm.name"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">CI</label>
+        <input
+          type="text"
+          [(ngModel)]="profileForm.ci"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Teléfono</label>
+        <input
+          type="text"
+          [(ngModel)]="profileForm.phone"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Correo</label>
+        <input
+          type="email"
+          [(ngModel)]="profileForm.email"
+          class="w-full px-4 py-2 border rounded-lg"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-gray-700 mb-2">Dirección</label>
+        <textarea
+          rows="3"
+          [(ngModel)]="profileForm.address"
+          class="w-full px-4 py-2 border rounded-lg"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end gap-3">
+      <button
+        (click)="closeEditForm()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        (click)="sendProfileUpdateRequest()"
+        [disabled]="isSending"
+        class="px-4 py-2 bg-purple-600 text-white rounded-lg disabled:opacity-50"
+      >
+        {{ isSending ? 'Enviando...' : 'Enviar solicitud' }}
+      </button>
+    </div>
+
+  </div>
+</div>

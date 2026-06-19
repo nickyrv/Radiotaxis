@@ -1,60 +1,199 @@
-<p>perfil-usuario works!</p>
-<div class="bg-white rounded-xl border border-gray-200 p-6 max-w-3xl">
+<div class="min-h-screen bg-gradient-to-br from-blue-100 via-white to-yellow-50 p-6">
 
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">
-    Mi perfil
-  </h1>
+  <div class="max-w-6xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
 
-  <div *ngIf="user; else noUser" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="p-8 flex justify-between items-center border-b border-gray-100">
 
-    <div>
-      <p class="text-sm text-gray-500">Nombre</p>
-      <p class="text-gray-900 font-medium">
-        {{ user.name }}
-      </p>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+          Mi Perfil
+        </h1>
+
+        <p class="text-gray-500 mt-1">
+          Información del usuario conectado
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="goBack()"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        Volver
+      </button>
+
     </div>
 
-    <div>
-      <p class="text-sm text-gray-500">Correo</p>
-      <p class="text-gray-900 font-medium">
-        {{ user.email }}
-      </p>
+    <div class="h-28 bg-gradient-to-r from-blue-200 via-blue-50 to-yellow-100"></div>
+
+    <div
+      *ngIf="user; else noUser"
+      class="p-8"
+    >
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 -mt-16 mb-8">
+
+        <div class="flex items-center gap-5">
+
+          <div class="relative">
+
+            <div
+              *ngIf="user.photo_url; else initialsAvatar"
+              class="w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-gray-100"
+            >
+              <img
+                [src]="user.photo_url"
+                alt="Foto de perfil"
+                class="w-full h-full object-cover"
+              />
+            </div>
+
+            <ng-template #initialsAvatar>
+              <div class="w-28 h-28 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-bold border-4 border-white shadow-lg">
+                {{ getInitials() }}
+              </div>
+            </ng-template>
+
+          </div>
+
+          <div class="pt-12 md:pt-8">
+            <h2 class="text-2xl font-bold text-gray-900">
+              {{ user.name || 'Usuario sin nombre' }}
+            </h2>
+
+            <p class="text-gray-500">
+              {{ user.email || 'Sin correo registrado' }}
+            </p>
+
+            <span class="inline-block mt-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm">
+              {{ getRoleLabel(user.role) }}
+            </span>
+
+            <div class="flex gap-2 mt-4">
+
+              <label class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer text-sm">
+                Subir foto
+                <input
+                  type="file"
+                  accept="image/*"
+                  (change)="onProfilePhotoSelected($event)"
+                  class="hidden"
+                />
+              </label>
+
+              <button
+                *ngIf="user.photo_url"
+                type="button"
+                (click)="user.photo_url"
+                class="px-4 py-2 bordengr border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+              >
+                Quitar foto
+              </button>
+
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="space-y-2">
+          <label class="text-sm text-gray-500">
+            Nombre completo
+          </label>
+
+          <div class="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
+            {{ user.name || 'No registrado' }}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm text-gray-500">
+            Correo electrónico
+          </label>
+
+          <div class="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
+            {{ user.email || 'No registrado' }}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm text-gray-500">
+            Rol del sistema
+          </label>
+
+          <div class="px-4 py-3 bg-gray-50 rounded-xl text-gray-900">
+            {{ getRoleLabel(user.role) }}
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm text-gray-500">
+            Estado
+          </label>
+
+          <div class="px-4 py-3 bg-gray-50 rounded-xl">
+            <span
+              class="px-3 py-1 rounded-full text-sm"
+              [ngClass]="{
+                'bg-green-100 text-green-700': user.status === 'active',
+                'bg-red-100 text-red-700': user.status !== 'active'
+              }"
+            >
+              {{ user.status === 'active' ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
+
+        
+      </div>
+
+      <div class="mt-10 border-t pt-6">
+
+        <h3 class="text-lg font-bold text-gray-900 mb-4">
+          Cuenta de acceso
+        </h3>
+
+        <div class="flex items-center gap-4 bg-blue-50 rounded-xl p-4">
+
+          <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
+            ✉
+          </div>
+
+          <div>
+            <p class="text-gray-900 font-medium">
+              {{ user.email || 'Sin correo registrado' }}
+            </p>
+
+            <p class="text-gray-500 text-sm">
+              Correo utilizado para iniciar sesión
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
 
-    <div>
-      <p class="text-sm text-gray-500">Rol</p>
-      <p class="text-gray-900 font-medium">
-        {{ getRoleLabel(user.role) }}
-      </p>
-    </div>
+    <ng-template #noUser>
+      <div class="p-8 text-center">
+        <p class="text-gray-500">
+          No se encontró información del usuario.
+        </p>
 
-    <div>
-      <p class="text-sm text-gray-500">Estado</p>
-      <span class="inline-block px-2 py-1 rounded-full text-sm bg-green-100 text-green-700">
-        {{ user.status === 'active' ? 'Activo' : 'Inactivo' }}
-      </span>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">ID de usuario</p>
-      <p class="text-gray-900 font-medium">
-        {{ user.id }}
-      </p>
-    </div>
-
-    <div>
-      <p class="text-sm text-gray-500">ID relacionado</p>
-      <p class="text-gray-900 font-medium">
-        {{ user.related_id || 'No asignado' }}
-      </p>
-    </div>
+        <button
+          type="button"
+          (click)="goBack()"
+          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
+        >
+          Volver
+        </button>
+      </div>
+    </ng-template>
 
   </div>
-
-  <ng-template #noUser>
-    <p class="text-gray-500">
-      No se encontró información del usuario.
-    </p>
-  </ng-template>
 
 </div>

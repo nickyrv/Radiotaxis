@@ -1,0 +1,91 @@
+<div class="space-y-6">
+
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">
+        Mis Solicitudes
+      </h1>
+      <p class="text-gray-600">
+        Seguimiento de solicitudes enviadas a administración.
+      </p>
+    </div>
+
+    <button
+      (click)="loadRequests()"
+      class="px-4 py-2 bg-purple-600 text-white rounded-lg"
+    >
+      Actualizar
+    </button>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+
+    <div
+      *ngIf="isLoading"
+      class="p-6 text-gray-600"
+    >
+      Cargando solicitudes...
+    </div>
+
+    <div
+      *ngIf="!isLoading && requests.length === 0"
+      class="p-6 text-gray-600"
+    >
+      Aún no tiene solicitudes registradas.
+    </div>
+
+    <table
+      *ngIf="!isLoading && requests.length > 0"
+      class="w-full"
+    >
+      <thead class="bg-gray-50 border-b">
+        <tr>
+          <th class="px-4 py-3 text-left text-gray-700">Fecha</th>
+          <th class="px-4 py-3 text-left text-gray-700">Tipo</th>
+          <th class="px-4 py-3 text-left text-gray-700">Vehículo</th>
+          <th class="px-4 py-3 text-left text-gray-700">Motivo</th>
+          <th class="px-4 py-3 text-left text-gray-700">Estado</th>
+          <th class="px-4 py-3 text-left text-gray-700">Respuesta</th>
+        </tr>
+      </thead>
+
+      <tbody class="divide-y">
+        <tr
+          *ngFor="let request of requests"
+          class="hover:bg-gray-50"
+        >
+          <td class="px-4 py-3 text-gray-700">
+            {{ request.created_at | date:'short' }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700">
+            {{ getRequestTypeLabel(request.request_type) }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700">
+            {{ getVehiclePlate(request.vehicle_id) }}
+          </td>
+
+          <td class="px-4 py-3 text-gray-700 max-w-xs">
+            {{ request.reason || 'Sin motivo' }}
+          </td>
+
+          <td class="px-4 py-3">
+            <span
+              class="px-2 py-1 rounded-full text-sm"
+              [ngClass]="getStatusColor(request.request_status)"
+            >
+              {{ getStatusLabel(request.request_status) }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 text-gray-700">
+            {{ request.admin_response || 'Sin respuesta aún' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+</div>

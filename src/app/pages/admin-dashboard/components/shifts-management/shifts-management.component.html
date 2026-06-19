@@ -95,7 +95,7 @@
                   </option>
 
                   <option
-                    *ngFor="let driver of availableDrivers"
+                    *ngFor="let driver of getAvailableDriversForSelectedVehicle(driverOneId)"
                     [ngValue]="driver.id"
                   >
                     {{ driver.name }}
@@ -258,6 +258,7 @@
           </p>
 
           <span
+            *ngIf="getDriverForDate(selectedCalendarVehicle, date)"
             class="inline-block mt-2 px-2 py-1 rounded-full text-xs"
             [ngClass]="{
               'bg-green-100 text-green-700': getShiftSource(selectedCalendarVehicle, date) === 'automatic',
@@ -418,7 +419,7 @@
             </option>
 
             <option
-              *ngFor="let driver of availableDrivers"
+              *ngFor="let driver of getAvailableDriversForSelectedVehicle(driverTwoId)"
               [ngValue]="driver.id"
             >
               {{ driver.name }}

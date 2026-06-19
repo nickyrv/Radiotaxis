@@ -1,0 +1,178 @@
+<div class="space-y-6">
+
+  <!-- CABECERA -->
+
+  <div>
+
+    <h1 class="text-2xl font-bold text-gray-900">
+      Bienvenido {{ driverInfo?.name || 'Conductor' }}
+    </h1>
+
+    <p class="text-gray-600 mt-1">
+      Resumen general de su actividad.
+    </p>
+
+  </div>
+
+  <!-- KPIs -->
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+      <p class="text-gray-500 text-sm">
+        Total Pagado
+      </p>
+
+      <p class="text-2xl font-bold text-green-700 mt-2">
+        Bs. {{ totalPayments | number }}
+      </p>
+
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+      <p class="text-gray-500 text-sm">
+        Deuda Pendiente
+      </p>
+
+      <p class="text-2xl font-bold text-red-700 mt-2">
+        Bs. {{ pendingDebt | number }}
+      </p>
+
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+      <p class="text-gray-500 text-sm">
+        Reportes Registrados
+      </p>
+
+      <p class="text-2xl font-bold text-blue-700 mt-2">
+        {{ incidentsCount }}
+      </p>
+
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+      <p class="text-gray-500 text-sm">
+        Pagos Registrados
+      </p>
+
+      <p class="text-2xl font-bold text-purple-700 mt-2">
+        {{ paymentsCount }}
+      </p>
+
+    </div>
+
+  </div>
+
+  <!-- INFO PRINCIPAL -->
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- VEHÍCULO -->
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        Vehículo Actual
+      </h2>
+
+      <div *ngIf="vehicle">
+
+        <p>
+          <strong>Placa:</strong>
+          {{ vehicle.plate }}
+        </p>
+
+        <p>
+          <strong>Modelo:</strong>
+          {{ vehicle.model }}
+        </p>
+
+        <p>
+          <strong>Estado:</strong>
+          {{ vehicle.status }}
+        </p>
+
+        <p>
+          <strong>Código Radio:</strong>
+          {{ vehicle.radio_code || 'Sin código' }}
+        </p>
+
+      </div>
+
+      <div *ngIf="!vehicle">
+
+        <p class="text-gray-500">
+          Sin vehículo asignado.
+        </p>
+
+      </div>
+
+    </div>
+
+    <!-- LICENCIA -->
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        Estado de Licencia
+      </h2>
+
+      <p class="mb-4">
+        <strong>Número:</strong>
+        {{ driverInfo?.license || 'Sin registro' }}
+      </p>
+
+      <span
+        class="px-3 py-1 rounded-full text-sm"
+        [ngClass]="licenseStatus.color"
+      >
+        {{ licenseStatus.text }}
+      </span>
+
+    </div>
+
+  </div>
+
+  <!-- PRÓXIMO TURNO -->
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      Próximo Turno
+    </h2>
+
+    <div *ngIf="nextShift">
+
+      <p>
+        <strong>Inicio:</strong>
+        {{ nextShift.start_date }}
+      </p>
+
+      <p>
+        <strong>Fin:</strong>
+        {{ nextShift.end_date }}
+      </p>
+
+      <p>
+        <strong>Estado:</strong>
+        {{ nextShift.status }}
+      </p>
+
+    </div>
+
+    <div *ngIf="!nextShift">
+
+      <p class="text-gray-500">
+        No existen turnos programados.
+      </p>
+
+    </div>
+
+  </div>
+
+</div>

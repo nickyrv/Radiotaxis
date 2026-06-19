@@ -9,6 +9,10 @@ import { ShiftsManagementComponent } from './components/shifts-management/shifts
 import { AlertsManagementComponent } from './components/alerts-management/alerts-management.component';
 import { PaymentsManagementComponent } from './components/payments-management/payments-management.component';
 import { PerfilUsuarioComponent } from '../perfil-usuario/perfil-usuario.component';
+import { PowerbiDashboardComponent } from './components/powerbi-dashboard/powerbi-dashboard.component';
+import { RequestsManagementComponent } from './components/requests-management/requests-management.component';
+
+import { RequestService } from '../../services/request.service';
 
 type AdminView =
   | 'overview'
@@ -18,7 +22,8 @@ type AdminView =
   | 'shifts'
   | 'alerts'
   | 'payments'
-  | 'profile' ;
+  | 'profile'
+  | 'requests';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -31,8 +36,10 @@ type AdminView =
     OwnersManagementComponent,
     ShiftsManagementComponent,
     AlertsManagementComponent,
-    PaymentsManagementComponent
-
+    PaymentsManagementComponent,
+    PerfilUsuarioComponent,
+    PowerbiDashboardComponent,
+    RequestsManagementComponent
   ],
   templateUrl: './admin-dashboard.component.html',
   styleUrls: ['./admin-dashboard.component.css']
@@ -45,6 +52,8 @@ export class AdminDashboardComponent implements OnInit {
 
   windowWidth = window.innerWidth;
 
+  pendingRequestsCount = 0;
+
   user = {
     name: 'Administrador'
   };
@@ -56,26 +65,40 @@ export class AdminDashboardComponent implements OnInit {
     { id: 'owners', label: 'Propietarios' },
     { id: 'shifts', label: 'Relevos' },
     { id: 'alerts', label: 'Alertas' },
-    { id: 'payments', label: 'Pagos' }
-
+    { id: 'payments', label: 'Finanzas' },
+    { id: 'requests', label: 'Solicitudes' }
   ];
 
+  constructor(
+    private requestService: RequestService
+  ) {}
+
   ngOnInit() {
-
     window.addEventListener('resize', () => {
-
       this.windowWidth = window.innerWidth;
-
     });
 
+    this.loadPendingRequestsCount();
   }
 
   setView(view: AdminView) {
-
     this.currentView = view;
-
     this.sidebarOpen = false;
 
+    if (view === 'requests') {
+      this.loadPendingRequestsCount();
+    }
+  }
+
+  loadPendingRequestsCount() {
+    this.requestService.getPendingCount().subscribe({
+      next: (data) => {
+        this.pendingRequestsCount = data.pending;
+      },
+      error: (error) => {
+        console.error('Error al cargar solicitudes pendientes:', error);
+      }
+    });
   }
 
   logout() {

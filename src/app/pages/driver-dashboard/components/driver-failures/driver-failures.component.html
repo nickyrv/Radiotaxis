@@ -1,0 +1,178 @@
+<div class="space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      Fallas y Repuestos
+    </h1>
+    <p class="text-gray-600">
+      Reporte fallas, accidentes o solicitudes de compra para revisión administrativa.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+
+    <button
+      (click)="openFailureModal('failure')"
+      class="bg-red-600 text-white p-4 rounded-lg hover:bg-red-700"
+    >
+      Reportar falla
+    </button>
+
+    <button
+      (click)="openFailureModal('accident')"
+      class="bg-orange-600 text-white p-4 rounded-lg hover:bg-orange-700"
+    >
+      Reportar accidente
+    </button>
+
+    <button
+      (click)="openFailureModal('other')"
+      class="bg-gray-600 text-white p-4 rounded-lg hover:bg-gray-700"
+    >
+      Otro problema
+    </button>
+
+    <button
+      (click)="openFailureModal('part_purchase')"
+      class="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700"
+    >
+      Solicitar repuesto
+    </button>
+
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      Historial de reportes registrados
+    </h2>
+
+    <div
+      *ngIf="driverIncidents.length === 0"
+      class="text-gray-500"
+    >
+      No existen fallas o incidentes registrados.
+    </div>
+
+    <div
+      *ngIf="driverIncidents.length > 0"
+      class="space-y-3"
+    >
+
+      <div
+        *ngFor="let incident of driverIncidents"
+        class="p-4 bg-gray-50 rounded-lg"
+      >
+        <div class="flex justify-between gap-4">
+
+          <div>
+            <p class="font-semibold text-gray-900">
+              {{ incident.category }}
+            </p>
+
+            <p class="text-gray-600 text-sm">
+              {{ incident.description || incident.detail || 'Sin detalle' }}
+            </p>
+
+            <p class="text-gray-500 text-sm mt-1">
+              {{ incident.event_date | date:'shortDate' }}
+            </p>
+          </div>
+
+          <span class="px-2 py-1 rounded-full text-sm bg-blue-100 text-blue-700 h-fit">
+            {{ incident.maintenance_status || 'Registrado' }}
+          </span>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- MODAL REPORTE FALLA -->
+<div
+  *ngIf="showFailureModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+>
+  <div class="bg-white rounded-lg max-w-2xl w-full">
+
+    <div class="p-6 border-b">
+      <h2 class="text-xl font-bold text-gray-900">
+        {{ getFailureTypeLabel(failureForm.type) }}
+      </h2>
+      <p class="text-gray-600 text-sm mt-1">
+        El reporte será enviado a administración para revisión.
+      </p>
+    </div>
+
+    <div class="p-6 space-y-4">
+
+      <div
+        *ngIf="failureForm.type === 'part_purchase'"
+        class="grid grid-cols-1 md:grid-cols-2 gap-4"
+      >
+
+        <div>
+          <label class="block text-gray-700 mb-2">Repuesto solicitado</label>
+          <input
+            type="text"
+            [(ngModel)]="failureForm.part_name"
+            class="w-full px-4 py-2 border rounded-lg"
+            placeholder="Ej. batería, llanta, aceite..."
+          />
+        </div>
+
+        <div>
+          <label class="block text-gray-700 mb-2">Costo estimado Bs.</label>
+          <input
+            type="number"
+            [(ngModel)]="failureForm.estimated_cost"
+            class="w-full px-4 py-2 border rounded-lg"
+          />
+        </div>
+
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Descripción</label>
+        <textarea
+          rows="4"
+          [(ngModel)]="failureForm.description"
+          class="w-full px-4 py-2 border rounded-lg"
+          placeholder="Describa el problema o solicitud..."
+        ></textarea>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 mb-2">Motivo / Observación</label>
+        <textarea
+          rows="3"
+          [(ngModel)]="failureForm.reason"
+          class="w-full px-4 py-2 border rounded-lg"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="p-6 border-t flex justify-end gap-3">
+      <button
+        (click)="closeFailureModal()"
+        class="px-4 py-2 border rounded-lg"
+      >
+        Cancelar
+      </button>
+
+      <button
+        (click)="sendFailureRequest()"
+        [disabled]="isSending"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-50"
+      >
+        {{ isSending ? 'Enviando...' : 'Enviar reporte' }}
+      </button>
+    </div>
+
+  </div>
+</div>

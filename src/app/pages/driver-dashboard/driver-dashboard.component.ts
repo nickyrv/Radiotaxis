@@ -1,90 +1,65 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import {
-  PaymentService,
-  Payment,
-  PaymentRequest
-} from '../../services/payment.service';
+import { PaymentService, Payment } from '../../services/payment.service';
+import { ShiftService, Shift } from '../../services/shift.service';
+import { VehicleService, Vehicle } from '../../services/vehicle.service';
+import { DriverService, Driver } from '../../services/driver.service';
+import { VehicleHistoryService, VehicleHistory } from '../../services/vehicle-history.service';
 
-import {
-  ShiftService,
-  Shift
-} from '../../services/shift.service';
+import { DriverOverviewComponent } from './components/driver-overview/driver-overview.component';
+import { DriverProfileComponent } from './components/driver-profile/driver-profile.component';
+import { DriverVehicleComponent } from './components/driver-vehicle/driver-vehicle.component';
+import { DriverPaymentsComponent } from './components/driver-payments/driver-payments.component';
+import { DriverFailuresComponent } from './components/driver-failures/driver-failures.component';
+import { DriverRequestsComponent } from './components/driver-requests/driver-requests.component';
 
-import {
-  VehicleService,
-  Vehicle
-} from '../../services/vehicle.service';
-
-import {
-  DriverService,
-  Driver
-} from '../../services/driver.service';
-
-import {
-  VehicleHistoryService,
-  VehicleHistory,
-  VehicleHistoryRequest
-} from '../../services/vehicle-history.service';
+type DriverView =
+  | 'overview'
+  | 'profile'
+  | 'vehicle'
+  | 'payments'
+  | 'failures'
+  | 'requests';
 
 @Component({
   selector: 'app-driver-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    DriverOverviewComponent,
+    DriverProfileComponent,
+    DriverVehicleComponent,
+    DriverPaymentsComponent,
+    DriverFailuresComponent,
+    DriverRequestsComponent
+  ],
   templateUrl: './driver-dashboard.component.html',
   styleUrls: ['./driver-dashboard.component.css']
 })
 export class DriverDashboardComponent implements OnInit {
 
-  showPaymentForm = false;
+  sidebarOpen = false;
+  currentView: DriverView = 'overview';
 
-  // Se mantiene con nombres "incident" porque tu HTML todavía los usa
-  showIncidentForm = false;
-
-  paymentType: 'daily' | 'weekly' = 'daily';
-  incidentType: 'failure' | 'accident' | 'other' = 'failure';
-
-  user = {
-    id: 5,
-    name: 'Conductor',
-    vehicleId: 3
-  };
+  user: any = null;
 
   driverInfo: Driver | null = null;
   vehicle: Vehicle | null = null;
 
   driverPayments: Payment[] = [];
   driverShifts: Shift[] = [];
-
-  // Ahora los incidentes vienen desde vehicle_history
   driverIncidents: VehicleHistory[] = [];
 
-  paymentForm: PaymentRequest = {
-    driver_id: this.user.id,
-    vehicle_id: this.user.vehicleId,
-    trip_id: null,
-    amount: 0,
-    type: 'daily',
-    concept: 'Entrega diaria',
-    payment_date: '',
-    status: 'paid',
-    observations: ''
-  };
-
-  incidentForm: VehicleHistoryRequest = {
-    vehicle_id: this.user.vehicleId,
-    driver_id: this.user.id,
-    category: 'Falla reportada',
-    detail: '',
-    event_date: '',
-    cost: null,
-    description: '',
-    maintenance_status: 'pending',
-    completed_date: null
-  };
+  menuItems: { id: DriverView; label: string; icon: string }[] = [
+    { id: 'overview', label: 'Resumen', icon: '🏠' },
+    { id: 'profile', label: 'Mi Perfil', icon: '👤' },
+    { id: 'vehicle', label: 'Mi Vehículo', icon: '🚕' },
+    { id: 'payments', label: 'Pagos / Deudas', icon: '💰' },
+    { id: 'failures', label: 'Fallas', icon: '🔧' },
+    { id: 'requests', label: 'Solicitudes', icon: '📄' }
+  ];
 
   constructor(
     private paymentService: PaymentService,
@@ -96,20 +71,48 @@ export class DriverDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    const savedUser = localStorage.getItem('currentUser');
+
+    if (!savedUser) {
+      this.router.navigate(['/login'], { replaceUrl: true });
+      return;
+    }
+
+    this.user = JSON.parse(savedUser);
+
     this.loadDriverData();
-    this.loadPayments();
-    this.loadShifts();
-    this.loadVehicle();
-    this.loadVehicleHistory();
+  }
+
+  setView(view: DriverView) {
+    this.currentView = view;
+    this.sidebarOpen = false;
   }
 
   loadDriverData() {
     this.driverService.getDrivers().subscribe({
       next: (drivers: Driver[]) => {
         this.driverInfo =
-          drivers.find(d => d.id === this.user.id) || null;
+          drivers.find(driver =>
+            Number(driver.id) === Number(this.user.related_id)
+          ) ||
+          drivers.find(driver =>
+            driver.email &&
+            this.user.email &&
+            driver.email.toLowerCase() === this.user.email.toLowerCase()
+          ) ||
+          null;
+
+        if (!this.driverInfo) {
+          alert('No se encontró un conductor relacionado a este usuario');
+          return;
+        }
+
+        this.loadVehicle();
+        this.loadPayments();
+        this.loadShifts();
+        this.loadVehicleHistory();
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error al cargar conductor:', error);
       }
     });
@@ -119,9 +122,15 @@ export class DriverDashboardComponent implements OnInit {
     this.vehicleService.getVehicles().subscribe({
       next: (vehicles: Vehicle[]) => {
         this.vehicle =
-          vehicles.find(v => v.id === this.user.vehicleId) || null;
+          vehicles.find(vehicle =>
+            Number(vehicle.id) === Number(this.driverInfo?.vehicle_id)
+          ) ||
+          vehicles.find(vehicle =>
+            Number(vehicle.current_driver_id) === Number(this.driverInfo?.id)
+          ) ||
+          null;
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error al cargar vehículo:', error);
       }
     });
@@ -130,11 +139,11 @@ export class DriverDashboardComponent implements OnInit {
   loadPayments() {
     this.paymentService.getPayments().subscribe({
       next: (payments: Payment[]) => {
-        this.driverPayments = payments.filter(
-          p => p.driver_id === this.user.id
+        this.driverPayments = payments.filter(payment =>
+          Number(payment.driver_id) === Number(this.driverInfo?.id)
         );
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error al cargar pagos:', error);
       }
     });
@@ -143,174 +152,77 @@ export class DriverDashboardComponent implements OnInit {
   loadShifts() {
     this.shiftService.getShifts().subscribe({
       next: (shifts: Shift[]) => {
-        this.driverShifts = shifts.filter(
-          s => s.driver_id === this.user.id
+        this.driverShifts = shifts.filter(shift =>
+          Number(shift.driver_id) === Number(this.driverInfo?.id)
         );
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error al cargar turnos:', error);
       }
     });
   }
 
   loadVehicleHistory() {
-    this.vehicleHistoryService
-      .getVehicleHistory(this.user.vehicleId)
-      .subscribe({
-        next: (history: VehicleHistory[]) => {
-          this.driverIncidents = history.filter(
-            item => item.driver_id === this.user.id
-          );
-        },
-        error: (error: any) => {
-          console.error('Error al cargar reportes:', error);
-        }
-      });
-  }
+    if (!this.driverInfo?.id) {
+      return;
+    }
 
-  openPaymentForm() {
-    const today = new Date().toISOString().split('T')[0];
-
-    this.paymentType = 'daily';
-
-    this.paymentForm = {
-      driver_id: this.user.id,
-      vehicle_id: this.user.vehicleId,
-      trip_id: null,
-      amount: 0,
-      type: 'daily',
-      concept: 'Entrega diaria',
-      payment_date: today,
-      status: 'paid',
-      observations: ''
-    };
-
-    this.showPaymentForm = true;
-  }
-
-  savePayment() {
-    this.paymentForm.type = this.paymentType;
-    this.paymentForm.concept =
-      this.paymentType === 'daily'
-        ? 'Entrega diaria'
-        : 'Entrega semanal';
-
-    this.paymentService.createPayment(this.paymentForm).subscribe({
-      next: () => {
-        this.showPaymentForm = false;
-        this.loadPayments();
+    this.vehicleHistoryService.getAllHistory().subscribe({
+      next: (history: VehicleHistory[]) => {
+        this.driverIncidents = history.filter(item =>
+          Number(item.driver_id) === Number(this.driverInfo?.id)
+        );
       },
-      error: (error: any) => {
-        console.error('Error al registrar pago:', error);
-        alert('No se pudo registrar el pago');
+      error: (error) => {
+        console.error('Error al cargar reportes:', error);
       }
     });
   }
 
-  setPaymentType(type: 'daily' | 'weekly') {
-    this.paymentType = type;
-    this.paymentForm.type = type;
-    this.paymentForm.concept =
-      type === 'daily'
-        ? 'Entrega diaria'
-        : 'Entrega semanal';
+  get totalPayments() {
+    return this.driverPayments
+      .filter(payment => payment.status === 'paid')
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   }
 
-  openIncidentForm() {
-    const today = new Date().toISOString().split('T')[0];
-
-    this.incidentType = 'failure';
-
-    this.incidentForm = {
-      vehicle_id: this.user.vehicleId,
-      driver_id: this.user.id,
-      category: 'Falla reportada',
-      detail: '',
-      event_date: today,
-      cost: null,
-      description: '',
-      maintenance_status: 'pending',
-      completed_date: null
-      
-    };
-
-    this.showIncidentForm = true;
+  get pendingPayments() {
+    return this.driverPayments.filter(payment =>
+      payment.status === 'pending'
+    );
   }
 
-  saveIncident() {
-    if (!this.incidentForm.description) {
-      alert('Debe ingresar una descripción');
-      return;
-    }
-
-    if (!this.incidentForm.event_date) {
-      alert('Debe seleccionar una fecha');
-      return;
-    }
-
-    if (this.incidentType === 'failure') {
-      this.incidentForm.category = 'Falla reportada';
-      this.incidentForm.detail = 'Falla reportada por conductor';
-    }
-
-    if (this.incidentType === 'accident') {
-      this.incidentForm.category = 'Accidente';
-      this.incidentForm.detail = 'Accidente reportado por conductor';
-    }
-
-    if (this.incidentType === 'other') {
-      this.incidentForm.category = 'Otro reporte';
-      this.incidentForm.detail = 'Reporte del conductor';
-    }
-
-    this.incidentForm.cost = null;
-
-    this.vehicleHistoryService.createHistory(this.incidentForm).subscribe({
-      next: () => {
-        this.showIncidentForm = false;
-        this.loadVehicleHistory();
-      },
-      error: (error: any) => {
-        console.error('Error al reportar incidente:', error);
-        alert('No se pudo reportar el incidente');
-      }
-    });
-  }
-
-  get totalThisWeek() {
-    return this.driverPayments.reduce(
-      (sum, p) => sum + Number(p.amount),
+  get pendingDebt() {
+    return this.pendingPayments.reduce(
+      (sum, payment) => sum + Number(payment.amount || 0),
       0
     );
   }
 
   get nextShift() {
-    return this.driverShifts.find(
-      s => s.status === 'scheduled'
+    return this.driverShifts.find(shift =>
+      shift.status === 'scheduled'
     );
   }
 
-  get scheduledShiftsCount() {
-    return this.driverShifts.filter(
-      s => s.status === 'scheduled'
-    ).length;
-  }
+  formatDate(date: string | null) {
+    if (!date) {
+      return 'Sin fecha';
+    }
 
-  formatDate(date: string) {
     return new Date(date).toLocaleDateString('es-ES');
   }
 
-  formatDateTime(date: string) {
+  formatDateTime(date: string | null) {
+    if (!date) {
+      return 'Sin fecha';
+    }
+
     return new Date(date).toLocaleString('es-ES');
   }
 
   logout() {
     localStorage.clear();
-
-    this.router.navigate(
-      ['/login'],
-      { replaceUrl: true }
-    );
+    this.router.navigate(['/login'], { replaceUrl: true });
   }
 
 }

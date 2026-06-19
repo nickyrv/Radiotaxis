@@ -351,10 +351,10 @@ completeForm = {
 
   getVehicleHistoryAlerts(vehicleId: number): VehicleHistory[] {
     return this.vehicleHistory.filter(history =>
-      Number(history.vehicle_id) === Number(vehicleId) &&
-      (history.category || '').toLowerCase() !== 'accidente'
+      Number(history.vehicle_id) === Number(vehicleId)
     );
   }
+  
   getVehicleHistoryAlertsBySeverity(
     vehicleId: number,
     severity: string
@@ -429,6 +429,12 @@ completeForm = {
       .replace(/Realizado en fecha:\s*\d{4}-\d{2}-\d{2}/g, '')
       .replace(/Observación:\s*[^R]*/g, '')
       .trim();
+  }
+
+  clearFilters() {
+    this.searchTerm = '';
+    this.categoryFilter = '';
+    this.statusFilter = '';
   }
   get availableHistoryCategories(): string[] {
     const categories = this.vehicleHistory

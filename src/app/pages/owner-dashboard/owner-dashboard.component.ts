@@ -6,10 +6,12 @@ import {
   VehicleService,
   Vehicle
 } from '../../services/vehicle.service';
+
 import {
   OwnerService,
   Owner
-} from '../../services/owner.service'; 
+} from '../../services/owner.service';
+
 import {
   PaymentService,
   Payment
@@ -20,16 +22,39 @@ import {
   VehicleHistory
 } from '../../services/vehicle-history.service';
 
+import { OwnerOverviewComponent } from './components/owner-overview/owner-overview.component';
+import { OwnerProfileComponent } from './components/owner-profile/owner-profile.component';
+import { OwnerVehiclesComponent } from './components/owner-vehicles/owner-vehicles.component';
+import { OwnerRequestsComponent } from './components/owner-requests/owner-requests.component';
+import { OwnerReportsComponent } from './components/owner-reports/owner-reports.component';
+
+type OwnerView =
+  | 'overview'
+  | 'profile'
+  | 'vehicles'
+  | 'requests'
+  | 'reports';
+
 @Component({
   selector: 'app-owner-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    OwnerOverviewComponent,
+    OwnerProfileComponent,
+    OwnerVehiclesComponent,
+    OwnerRequestsComponent,
+    OwnerReportsComponent
+  ],
   templateUrl: './owner-dashboard.component.html',
   styleUrls: ['./owner-dashboard.component.css']
 })
 export class OwnerDashboardComponent implements OnInit {
 
   sidebarOpen = false;
+
+  currentView: OwnerView = 'overview';
 
   user: any = null;
 
@@ -43,6 +68,14 @@ export class OwnerDashboardComponent implements OnInit {
   payments: Payment[] = [];
 
   vehicleHistory: VehicleHistory[] = [];
+
+  menuItems: { id: OwnerView; label: string; icon: string }[] = [
+    { id: 'overview', label: 'Resumen', icon: '🏠' },
+    { id: 'profile', label: 'Mi Perfil', icon: '👤' },
+    { id: 'vehicles', label: 'Mis Vehículos', icon: '🚕' },
+    { id: 'requests', label: 'Solicitudes', icon: '📄' },
+    { id: 'reports', label: 'Reportes', icon: '📊' }
+  ];
 
   constructor(
     private vehicleService: VehicleService,
@@ -59,9 +92,15 @@ export class OwnerDashboardComponent implements OnInit {
       this.router.navigate(['/login'], { replaceUrl: true });
       return;
     }
+
     this.user = JSON.parse(savedUser);
-    
+
     this.loadOwnerAndData();
+  }
+
+  setView(view: OwnerView) {
+    this.currentView = view;
+    this.sidebarOpen = false;
   }
 
   loadOwnerAndData() {
@@ -162,19 +201,20 @@ export class OwnerDashboardComponent implements OnInit {
 
   get totalIncome() {
     return this.ownerPayments
-      .filter(payment => payment.type === 'income')
+      .filter(payment =>
+        payment.type === 'income' &&
+        payment.status === 'paid'
+      )
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   }
 
   get totalExpenses() {
-    const paymentExpenses = this.ownerPayments
-      .filter(payment => payment.type === 'expense')
+    return this.ownerPayments
+      .filter(payment =>
+        payment.type === 'expense' &&
+        payment.status === 'paid'
+      )
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-
-    const maintenanceExpenses = this.ownerMaintenances
-      .reduce((sum, history) => sum + Number(history.cost || 0), 0);
-
-    return paymentExpenses + maintenanceExpenses;
   }
 
   get netProfit() {
@@ -197,4 +237,5 @@ export class OwnerDashboardComponent implements OnInit {
     localStorage.clear();
     this.router.navigate(['/login'], { replaceUrl: true });
   }
+
 }

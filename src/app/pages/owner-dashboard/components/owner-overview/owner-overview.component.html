@@ -1,0 +1,48 @@
+
+<div class="space-y-6">
+
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">
+      Dashboard de Transparencia
+    </h1>
+    <p class="text-gray-600 mt-1">
+      Monitoreo financiero de sus vehículos
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="text-gray-600 text-sm">Ingresos del Mes</div>
+      <div class="text-gray-900 text-xl font-bold">
+        Bs. {{ totalIncome | number }}
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="text-gray-600 text-sm">Gastos Mantenimiento</div>
+      <div class="text-gray-900 text-xl font-bold">
+        Bs. {{ totalExpenses | number }}
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-200 p-6">
+      <div class="text-gray-600 text-sm">Utilidad Neta</div>
+      <div class="text-gray-900 text-xl font-bold">
+        Bs. {{ netProfit | number }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+    <h3 class="text-xl font-semibold text-gray-900 mb-4">
+      Resumen de Vehículos
+    </h3>
+
+    <p class="text-gray-600">
+      Vehículos registrados: {{ ownerVehicles.length }}
+    </p>
+  </div>
+
+</div>

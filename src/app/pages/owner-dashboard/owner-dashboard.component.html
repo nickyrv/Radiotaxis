@@ -30,7 +30,7 @@
         </div>
 
         <p class="text-gray-600 text-sm mt-1">
-          {{ currentOwner?.name || user.name }}
+          {{ currentOwner?.name || user?.name }}
         </p>
 
         <span class="inline-block mt-2 px-2 py-1 bg-purple-100 text-purple-700 text-sm rounded-full">
@@ -39,8 +39,33 @@
 
       </div>
 
+      <!-- Menu -->
+      <nav class="flex-1 p-4 space-y-1">
+
+        <button
+          *ngFor="let item of menuItems"
+          (click)="setView(item.id)"
+          class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors"
+          [ngClass]="{
+            'bg-purple-50 text-purple-700': currentView === item.id,
+            'text-gray-700 hover:bg-gray-50': currentView !== item.id
+          }"
+        >
+
+          <span>
+            {{ item.icon }}
+          </span>
+
+          <span>
+            {{ item.label }}
+          </span>
+
+        </button>
+
+      </nav>
+
       <!-- Sidebar Stats -->
-      <div class="flex-1 p-4">
+      <div class="p-4">
 
         <div class="p-4 bg-blue-50 rounded-lg">
 
@@ -106,285 +131,45 @@
 
     </div>
 
-    <div class="p-6 lg:p-8 space-y-6">
-
-      <!-- Header -->
-      <div>
-
-        <h1 class="text-2xl font-bold text-gray-900">
-          Dashboard de Transparencia
-        </h1>
-
-        <p class="text-gray-600 mt-1">
-          Monitoreo financiero de sus vehículos
-        </p>
-
-      </div>
-
-      <!-- KPIs -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-          <div class="flex items-center gap-3 mb-4">
-
-            <div class="bg-green-100 p-3 rounded-lg">
-              💰
-            </div>
-
-            <div>
-
-              <div class="text-gray-600 text-sm">
-                Ingresos del Mes
-              </div>
-
-              <div class="text-gray-900 text-xl font-bold">
-                Bs. {{ totalIncome | number }}
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-          <div class="flex items-center gap-3 mb-4">
-
-            <div class="bg-red-100 p-3 rounded-lg">
-              🔧
-            </div>
-
-            <div>
-
-              <div class="text-gray-600 text-sm">
-                Gastos Mantenimiento
-              </div>
-
-              <div class="text-gray-900 text-xl font-bold">
-                Bs. {{ totalExpenses | number }}
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-          <div class="flex items-center gap-3 mb-4">
-
-            <div class="bg-purple-100 p-3 rounded-lg">
-              📈
-            </div>
-
-            <div>
-
-              <div class="text-gray-600 text-sm">
-                Utilidad Neta
-              </div>
-
-              <div class="text-gray-900 text-xl font-bold">
-                Bs. {{ netProfit | number }}
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Vehículos -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">
-          Estado de Vehículos
-        </h3>
-
-        <div class="space-y-4">
-
-          <div
-            *ngFor="let vehicle of ownerVehicles"
-            class="border border-gray-200 rounded-lg p-4"
-          >
-
-            <div class="flex items-center justify-between mb-4">
-
-              <div class="flex items-center gap-3">
-
-                <div class="bg-blue-100 p-3 rounded-lg">
-                  🚗
-                </div>
-
-                <div>
-
-                  <div class="text-gray-900 font-semibold">
-                    {{ vehicle.plate }}
-                  </div>
-
-                  <div class="text-gray-600 text-sm">
-                    {{ vehicle.model }} ({{ vehicle.year }})
-                  </div>
-
-                </div>
-
-              </div>
-
-              <span
-                class="px-3 py-1 rounded-full text-sm"
-                [ngClass]="{
-                  'bg-green-100 text-green-700': vehicle.status === 'active',
-                  'bg-yellow-100 text-yellow-700': vehicle.status === 'maintenance',
-                  'bg-gray-100 text-gray-700': vehicle.status !== 'active' && vehicle.status !== 'maintenance'
-                }"
-              >
-
-                {{
-                  vehicle.status === 'active'
-                    ? 'Activo'
-                    : vehicle.status === 'maintenance'
-                    ? 'Mantenimiento'
-                    : 'Inactivo'
-                }}
-
-              </span>
-
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-
-          <div>
-            <p class="text-gray-600">Tipo de servicio</p>
-            <p class="text-gray-900">
-              {{ vehicle.service_type === 'radio_taxi' ? 'Radio taxi' : 'Taxi' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="text-gray-600">Estado administrativo</p>
-            <p class="text-gray-900">
-              {{ vehicle.management_status === 'active' ? 'Activo' : 'Inactivo' }}
-            </p>
-          </div>
-
-          <div>
-            <p class="text-gray-600">Fecha de registro</p>
-            <p class="text-gray-900">
-              {{ vehicle.registration_date || 'Sin fecha' }}
-            </p>
-          </div>
-
-        </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Pagos -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">
-          Pagos Recientes
-        </h3>
-
-        <div class="overflow-x-auto">
-
-          <table class="w-full">
-
-            <thead class="bg-gray-50 border-b border-gray-200">
-
-              <tr>
-
-                <th class="px-4 py-3 text-left text-gray-700">
-                  Fecha
-                </th>
-
-                <th class="px-4 py-3 text-left text-gray-700">
-                  Concepto
-                </th>
-
-                <th class="px-4 py-3 text-right text-gray-700">
-                  Monto
-                </th>
-
-              </tr>
-
-            </thead>
-
-            <tbody class="divide-y divide-gray-200">
-
-              <tr
-                *ngFor="let payment of ownerPayments"
-                class="hover:bg-gray-50"
-              >
-
-                <td class="px-4 py-3 text-gray-700">
-                  {{ payment.payment_date | date:'shortDate' }}
-                </td>
-
-                <td class="px-4 py-3 text-gray-700">
-                  {{ payment.concept }}
-                </td>
-
-                <td class="px-4 py-3 text-right text-gray-900 font-semibold">
-                  Bs. {{ payment.amount | number }}
-                </td>
-
-              </tr>
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-      </div>
-
-      <!-- Mantenimientos -->
-      <div class="bg-white rounded-lg border border-gray-200 p-6">
-
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">
-          Historial de Mantenimiento
-        </h3>
-
-        <div class="space-y-3">
-
-          <div
-            *ngFor="let maintenance of ownerMaintenances"
-            class="p-4 bg-gray-50 rounded-lg"
-          >
-
-            <div class="flex items-center justify-between mb-2">
-
-              <h4 class="text-gray-900 font-semibold">
-                {{ maintenance.category || maintenance.detail || 'Mantenimiento' }}
-              </h4>
-
-              <span class="text-gray-900 font-bold">
-                Bs. {{ maintenance.cost | number }}
-              </span>
-
-            </div>
-
-            <p class="text-gray-600 text-sm">
-              {{ maintenance.description || maintenance.detail || 'Sin descripción' }}
-            </p>
-
-            <div class="text-gray-500 text-sm mt-2">
-              {{ maintenance.event_date | date:'shortDate' }}
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
+    <div class="p-6 lg:p-8">
+
+      <app-owner-overview
+        *ngIf="currentView === 'overview'"
+        [currentOwner]="currentOwner"
+        [ownerVehicles]="ownerVehicles"
+        [ownerPayments]="ownerPayments"
+        [ownerMaintenances]="ownerMaintenances"
+        [totalIncome]="totalIncome"
+        [totalExpenses]="totalExpenses"
+        [netProfit]="netProfit"
+      ></app-owner-overview>
+
+      <app-owner-profile
+        *ngIf="currentView === 'profile'"
+        [currentOwner]="currentOwner"
+      ></app-owner-profile>
+
+      <app-owner-vehicles
+        *ngIf="currentView === 'vehicles'"
+        [ownerVehicles]="ownerVehicles"
+      ></app-owner-vehicles>
+
+      <app-owner-requests
+        *ngIf="currentView === 'requests'"
+        [currentOwner]="currentOwner"
+        [ownerVehicles]="ownerVehicles"
+      ></app-owner-requests>
+
+      <app-owner-reports
+        *ngIf="currentView === 'reports'"
+        [currentOwner]="currentOwner"
+        [ownerVehicles]="ownerVehicles"
+        [ownerPayments]="ownerPayments"
+        [ownerMaintenances]="ownerMaintenances"
+        [totalIncome]="totalIncome"
+        [totalExpenses]="totalExpenses"
+        [netProfit]="netProfit"
+      ></app-owner-reports>
 
     </div>
 

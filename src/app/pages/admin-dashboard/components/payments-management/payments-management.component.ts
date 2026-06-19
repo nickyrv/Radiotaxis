@@ -471,6 +471,15 @@ setFinanceTab(tab: 'rentas' | 'gastos' | 'balance') {
       .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   }
 
+  isCompletedHistoryExpense(history: VehicleHistory): boolean {
+    return (
+      history.maintenance_status === 'completed' &&
+      history.cost !== null &&
+      history.cost !== undefined &&
+      Number(history.cost) > 0
+    );
+  }
+
   get balanceExpenses() {
     const paymentExpenses = this.balancePayments
       .filter(payment =>
@@ -507,7 +516,7 @@ setFinanceTab(tab: 'rentas' | 'gastos' | 'balance') {
 
         return (
           matchesVehicle &&
-          hasCost &&
+          this.isCompletedHistoryExpense(history) &&
           isPastOrToday &&
           matchesFilters
         );
@@ -619,9 +628,7 @@ setFinanceTab(tab: 'rentas' | 'gastos' | 'balance') {
 
     const historyExpenses = this.vehicleHistory
       .filter(history =>
-        history.cost !== null &&
-        history.cost !== undefined &&
-        Number(history.cost) > 0 &&
+        this.isCompletedHistoryExpense(history) &&
         this.isDateUntilToday(history.event_date)
       )
       .map(history => ({
@@ -633,7 +640,7 @@ setFinanceTab(tab: 'rentas' | 'gastos' | 'balance') {
         amount: Number(history.cost || 0),
         status: 'paid',
         source: 'historial',
-        observation: 'Registrado desde Vehículos > Mantenimiento'
+        observation: 'Gasto realizado desde Vehículos > Mantenimiento'
       }));
 
     return [...manualExpenses, ...historyExpenses]
